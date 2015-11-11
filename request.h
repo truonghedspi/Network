@@ -9,8 +9,8 @@ typedef enum {
 	LOGIN_REQUEST,
 	LOGOUT_REQUEST,
 	REGISTER_REQUEST,
-	CHAT_WITH_USER_REQUEST,
-	GET_LIST_ONLINE_USER_REQUEST
+	CHAT_REQUEST,
+	GET_LIST_USER_ONLINE_REQUEST
 }RequestType;
 
 typedef struct _Request {
@@ -42,11 +42,16 @@ typedef struct _GetOnlineUserRequest {
 	char data[200];
 }GetOnlineUserRequest;
 
-typedef struct _ChatUserRequest {
-	RequestType typeRequest;	
-	char userName[25];
-	char targetUserName[25];
-	char chatContent[150];
-}ChatUserRequest;
+typedef enum{
+	ASK_CHAT,QUIT_CHAT,
+	CHAT,YES,NO
+}ChatType;
+
+typedef struct _ChatRequest {
+	RequestType typeRequest;
+	ChatType chatType;
+	char userName[50];
+	char messenger[146];
+}ChatRequest;
 
 #endif

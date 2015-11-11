@@ -22,4 +22,4 @@ respond.o: respond.h
 	$(CC) $(CFLAGS) -c respond.c -o respond.o
 
 clean:
-	rm -rf *.o server  *~ *.txt
+	rm -rf *.o server  *~ 
