@@ -69,7 +69,7 @@ int login(int sockfd){
 	LoginRequest user;
 	Respond respond;
 	LoginRespond loginrespond;
-	int t;
+	int t, size;
 
 	while(1){
 		printf("\nNhap ten tai khoan: ");
@@ -93,13 +93,14 @@ int login(int sockfd){
 	strcpy(user.password,pass);
 	user.typeRequest=LOGIN_REQUEST;
 	memcpy(mesg,&user,LEN);
-	send(sockfd, mesg,strlen(mesg), 0);
-	strcpy(mesg,"");
-	recv(sockfd, mesg, LEN, 0);
+	send(sockfd, mesg,LEN, 0);
 	respond=(*(Respond*)mesg);
-	
 	if(check_type(respond) == LOGIN_RESPOND){
 		loginrespond=(*(LoginRespond*)mesg);
+			if (strlen(loginrespond.messenger > 0))
+			puts(loginrespond.messenger);
+		else 
+			printf("Data null\n");
 		if(loginrespond.loginResult == LOGIN_SUCCESS){
 			printf("\nDang nhap thanh cong");
 			return 1;
@@ -116,7 +117,9 @@ int login(int sockfd){
 			printf("\nTai khoan dang online");
 			return 0;
 		}
-	} 
+	} else {
+		printf("ERROR\n");
+	}
 
 	
 }
@@ -160,8 +163,7 @@ int sign_up(int sockfd){
 	strcpy(user.password,pass);
 	user.typeRequest=REGISTER_REQUEST;
 	memcpy(mesg,&user,LEN);
-	send(sockfd, mesg,strlen(mesg), 0);
-	strcpy(mesg,"");
+	send(sockfd, mesg,LEN, 0);
 	recv(sockfd, mesg, LEN, 0);
 	respond=(*(Respond*)mesg);
 	if(respond.typeRespond == REGISTER_RESPOND){
@@ -347,9 +349,13 @@ int sign_up(int sockfd){
 void main(){
 	int sockfd;
 	struct sockaddr_in serv_addr;
-	char choose[2];
+	char choose[5];
 	int t;
+	fd_set readSet;
+	struct timeval tv;
 
+	tv.tv_sec = 0;
+	tv.tv_usec = 0;
     serv_addr.sin_family = AF_INET;       
     serv_addr.sin_port = htons(5500);
     inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
@@ -363,31 +369,41 @@ void main(){
        printf("\nConnect loi!!\n");
        return ;
     }else
+    FD_ZERO(&readSet);
+
     while(1){
     	printf("\n*****MENU*****\n");
     	printf("\n1.Dang nhap\n2.Dang ki\n3.Thoat" );
     	printf("\nBan chon: ");
-    	fgets(choose,3,stdin);
-    	switch(choose[0]){
+    	FD_SET(fileno(stdin), &readSet);
+    	FD_SET(sockfd, &readSet);
+    	select(sockfd+1, &readSet, NULL, NULL, &tv);
 
-    		case '1': 
-    				printf("\nBan chon Dang Nhap");
-    				t = login(sockfd);
-    			    //if(t == 1) menu(sockfd);
-    			    
-    			    break;
-    		case '2': 	
-    				printf("\nBan chon Dang Ki");
-    				t = sign_up(sockfd);
-    			    //if(t == 1) menu(sockfd);
-    			    
-    			    break;
-    		case '3':
-    			return;
-    		default : break;
-    			
+    		fgets(choose,3,stdin);
+    		switch(choose[0]){
+
+	    		case '1': 
+	    				printf("\nBan chon Dang Nhap");
+	    				t = login(sockfd);
+	    			    //if(t == 1) menu(sockfd);
+	    			    
+	    			    break;
+	    		case '2': 	
+	    				printf("\nBan chon Dang Ki");
+	    				t = sign_up(sockfd);
+	    			    //if(t == 1) menu(sockfd);
+	    			    
+	    			    break;
+	    		case '3':
+	    			return;
+	    		default : break;
+    		
+    	}
+
+    	if (FD_ISSET(sockfd, &readSet)) {
 
     	}
+    	
     }
 
 

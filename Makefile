@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -W -std=gnu99 -m 32
+CFLAGS = -g -Wall -W -std=gnu99
 
 all: server
 
@@ -15,10 +15,10 @@ input.o: input.c input.h
 my_socket.o: my_socket.c my_socket.h
 	$(CC) $(CFLAGS) -c my_socket.c -o my_socket.o
 
-request.o: request.h
+request.o: request.c request.h
 	$(CC) $(CFLAGS) -c request.c -o request.o
 
-respond.o: respond.h
+respond.o: request.c respond.h
 	$(CC) $(CFLAGS) -c respond.c -o respond.o
 
 clean:

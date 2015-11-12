@@ -1,3 +1,4 @@
+
 #include "input.h"
 #include "request.h"
 #include "respond.h"
@@ -109,6 +110,7 @@ void handleLoginRequest(Request request) {
 	User user;
 	int userIndex = -1;
 
+	printf("User Login!\n");
 	memcpy(&loginRequest, &request, sizeof(LoginRequest));
 	makeUser(&user, loginRequest.userName, loginRequest.password);
 	loginRespond.typeRespond = LOGIN_RESPOND;
@@ -176,11 +178,11 @@ void recognizeRequest(char* buff) {
 			handleRegisterRequest(request);
 			break;
 
-		case CHAT_WITH_USER_REQUEST:
+		case CHAT_REQUEST:
 			handleChatWithFriendRequest(request);
 			break;
 
-		case GET_LIST_ONLINE_USER_REQUEST:
+		case GET_LIST_USER_ONLINE_REQUEST:
 			handleGetListOnlineUserRequest(request);
 			break;
 	}
@@ -194,7 +196,7 @@ int main() {
 	struct sockaddr_in  clientAddr;
 	char buff[sizeof(Request)+1];
 
-	numUserRegisted = readUsersFile("data", userRegisted);
+	numUserRegisted = readUsersFile("data.txt", userRegisted);
 	for (i = 0; i < numUserRegisted; ++i) {
 		userRegisted[i].isOnline = FALSE;
 	}
@@ -240,23 +242,27 @@ int main() {
 			if ( (sockFD = clients[i].fd) < 0) {
 				continue;
 			}
-			if (clients[i].revents & (POLLRDNORM | POLLWRNORM)) {
+			if (clients[i].revents & (POLLRDNORM | POLLERR)) {
 					setCurrentSockFD(sockFD);
 					size = recv(currentSockFD, buff, sizeof(Request), 0);
 					if (size < 0) {
 						if (errno == ECONNRESET) {
                       		close(currentSockFD);
 							clients[i].fd = -1;
-                   		} else
-                        	 err_sys("read error");	
+
+                   		} else {
+                   			printf("error_sys\n");
+                   			exit(0);
+                   		}
+                        	 
 					} else if (size == 0) {
 						close(currentSockFD);
 						clients[i].fd = -1;
 					} else {
+						printf("recognizeRequest\n");
 						recognizeRequest(buff);
 					}
-					if (--nReady <= 0 )
-						break;
+					
 			}
 		}
 
