@@ -9,8 +9,8 @@ const int MAX_USER = 10;
 const int BACKLOG = 50;
 int currentSockFD = -1;
 int numUserRegisted = 0;
-/*struct pollfd clients[OPEN_MAX];
-User userRegisted[OPEN_MAX];*/
+struct pollfd clients[OPEN_MAX];
+User userRegisted[OPEN_MAX];
 
 void setCurrentSockFD(int sockFD) {
 	currentSockFD = sockFD;
@@ -103,7 +103,7 @@ int sendRespond(Respond respond) {
 	return send(currentSockFD, buff, sizeof(Respond), 0);
 }
 
-void handleLoginRequest(Request request,User userRegisted[]) {
+void handleLoginRequest(Request request) {
 	LoginRequest loginRequest;
 	LoginRespond loginRespond;
 	Respond respond;
@@ -122,27 +122,27 @@ void handleLoginRequest(Request request,User userRegisted[]) {
 		memcpy(&respond, &loginRespond, sizeof(Respond));
 		sendRespond(respond);
 		return;
-	}else if (strcmp(user.password, userRegisted[userIndex].password) != 0) {
+	}
+
+	if (strcmp(user.password, userRegisted[userIndex].password) != 0) {
 		loginRespond.loginResult = LOGIN_INVALID_PASSWORD;
 		strcpy(loginRespond.messenger, "Password invalid!");
 		memcpy(&respond, &loginRespond, sizeof(Respond));
 		sendRespond(respond);
 		return;
-	}else if (userRegisted[userIndex].isOnline == TRUE) {
-		loginRespond.loginResult = LOGIN_ONLINING;
-		strcpy(loginRespond.messenger, "User is onlining!");
+	}
+
+	if (userRegisted[userIndex].isOnline == FALSE) {
+		loginRespond.loginResult = LOGIN_ONLINE_EXISTED;
+		strcpy(loginRespond.messenger, "User was online!");
 		memcpy(&respond, &loginRespond, sizeof(Respond));
 		sendRespond(respond);
 		return;
-	}else{
-		userRegisted[userIndex].sockFD=currentSockFD;
-		userRegisted[userIndex].isOnline=TRUE;
-		loginRespond.loginResult = LOGIN_SUCCESS;
-		strcpy(loginRespond.messenger, "Log in success");
-		memcpy(&respond, &loginRespond, sizeof(Respond));
-		sendRespond(respond);
-	}
+	}	
 
+	loginRespond.loginResult = LOGIN_SUCCESS;
+	strcpy(loginRespond.messenger, "Log in success");
+	memcpy(&respond, &loginRespond, sizeof(Respond));
 }
 
 void handleLogoutRequest(Request request) {
@@ -161,13 +161,13 @@ void handleGetListOnlineUserRequest(Request request) {
 
 }
 
-void recognizeRequest(char* buff,User userRegisted[]) {
+void recognizeRequest(char* buff) {
 	Request request;
 	request = *((Request*) buff);
 
 	switch(request.typeRequest) {
 		case LOGIN_REQUEST:
-			handleLoginRequest(request,userRegisted);
+			handleLoginRequest(request);
 			break;
 
 		case LOGOUT_REQUEST:
@@ -195,8 +195,6 @@ int main() {
 	int nReady, maxIndex, i,  size;
 	struct sockaddr_in  clientAddr;
 	char buff[sizeof(Request)+1];
-	struct pollfd clients[OPEN_MAX];
-	User userRegisted[OPEN_MAX];
 
 	numUserRegisted = readUsersFile("data.txt", userRegisted);
 	for (i = 0; i < numUserRegisted; ++i) {
@@ -214,12 +212,12 @@ int main() {
 	maxIndex = 0;
 
 	while(1) {
-		nReady = poll(clients, maxIndex + 1, 5600);
+		nReady = poll(clients, maxIndex + 1, 3);
 		if (clients[0].revents & POLLRDNORM) {
 			clientLen = sizeof (clientAddr);
 			clientFD = accept(listenFD, (struct sockaddr *) &clientAddr, &clientLen);
-			printf("Client : %d connected", clientFD);
-			
+			printf("Client : %d\n connected", clientFD);
+
 			for (i = 1; i < OPEN_MAX; ++i) {
 				if (clients[i].fd < 0) {
 					clients[i].fd = clientFD;
@@ -231,6 +229,7 @@ int main() {
 				myERROR("Too many clients");
 			}
 			clients[i].events = POLLRDNORM;
+			clients[i].events = POLLWRNORM;
 			if (i > maxIndex) {
 				maxIndex = i;
 			}
@@ -245,8 +244,7 @@ int main() {
 			}
 			if (clients[i].revents & (POLLRDNORM | POLLERR)) {
 					setCurrentSockFD(sockFD);
-					size = recv(currentSockFD, buff, 204, 0);
-					buff[size]='\0';
+					size = recv(currentSockFD, buff, sizeof(Request), 0);
 					if (size < 0) {
 						if (errno == ECONNRESET) {
                       		close(currentSockFD);
@@ -262,7 +260,7 @@ int main() {
 						clients[i].fd = -1;
 					} else {
 						printf("recognizeRequest\n");
-						recognizeRequest(buff,userRegisted);
+						recognizeRequest(buff);
 					}
 					
 			}

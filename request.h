@@ -10,7 +10,8 @@ typedef enum {
 	LOGOUT_REQUEST,
 	REGISTER_REQUEST,
 	CHAT_REQUEST,
-	GET_LIST_USER_ONLINE_REQUEST
+	GET_LIST_USER_ONLINE_REQUEST,
+	GET_LIST_ROOM_REQUEST
 }RequestType;
 
 typedef struct _Request {
@@ -44,7 +45,7 @@ typedef struct _GetOnlineUserRequest {
 
 typedef enum{
 	ASK_CHAT,QUIT_CHAT,
-	CHAT,YES,NO
+	CHAT,YES,NO,ROOM
 }ChatType;
 
 typedef struct _ChatRequest {

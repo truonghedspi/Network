@@ -19,25 +19,8 @@ typedef struct B {
 
 
 int main() {
-	FILE *f;
-	char data[100];
-	char buff[104];
-	A user;
-	B user1, user2;
-
-	user1.type = LOGIN;
-	strcpy(user1.userName, "Ha");
-	strcpy(user1.password, "123");
-	memcpy(buff, &user1, 104);
-	puts(buff);
-
-	user = *((A*)buff);
-	user2 = *((B*)buff);
-	if (user.type == LOGIN) {
-		printf("Login\n");
-	}
-
-	printf("%s-%s\n", user2.userName, user2.password);
+	char listOnlineUser[10][20];
+	
 	
 	return 0;
 }

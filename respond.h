@@ -11,7 +11,8 @@ typedef enum {
 	LOGOUT_RESPOND,
 	REGISTER_RESPOND,
 	CHAT_RESPOND,
-	GET_LIST_USER_ONLINE_RESPOND
+	GET_LIST_USER_ONLINE_RESPOND,
+	GET_LIST_ROOM_RESPOND
 }RespondType;
 
 typedef struct _Respond{
@@ -23,7 +24,7 @@ typedef enum {
 	LOGIN_SUCCESS,
 	LOGIN_INVALID_USERNAME,
 	LOGIN_INVALID_PASSWORD,
-	LOGIN_ONLINE_EXISTED //da co thang online tai khoan do
+	LOGIN_ONLINING //da co thang online tai khoan do
 }LoginResult;
 
 typedef struct _LoginRespond {

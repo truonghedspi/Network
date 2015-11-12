@@ -14,7 +14,7 @@
 #include "respond.h"
 #define LEN 204
 
-
+int currentSockFD = -1;
 
 
 
@@ -35,6 +35,33 @@ int check_type(Respond respond){
 	return respond.typeRespond;
 }
 
+/*void TypeChatRespond(char buff[],User_List chatList[],User_List userList[]){
+
+	ChatRespond chatRespond;
+
+	chatRespond=(*(ChatRespond*)buff);
+	switch(chatRespond.chatType){
+		case ASK_CHAT:
+			answer_chat_respond(chatRespond,chatList);
+			break;
+		case QUIT_CHAT:
+
+			break;
+		case CHAT:
+
+			break;
+		case YES:
+
+			break;
+		case NO:
+
+			break;
+		case ROOM:
+			chatting;
+			break; 
+	}
+}*/
+
 /*int take_user_list(char data[],User_List user_list[]){
 	char mesg2[LEN];
 	int i=0;
@@ -53,23 +80,23 @@ int check_type(Respond respond){
 }*/
 
 	
-/*int add_partner(char nich_name[],User_List chat_list[]){
+int add_partner(char nich_name[],User_List chatList[]){
 	int i=0;
-	while(strcmp(chat_list[i].nich_name,"") != 0 ){
+	while(strcmp(chatList[i].nich_name,"") != 0 ){
 		i++;
 	}
-	strcpy(chat_list[i].nich_name,nich_name);
+	strcpy(chatList[i].nich_name,nich_name);
 	return i+1;
-}*/
+}
 
-int login(int sockfd){
+int login(){
 	char mesg[LEN];
 	char tk[100];
 	char pass[100];
 	LoginRequest user;
 	Respond respond;
-	LoginRespond loginrespond;
-	int t, size;
+	LoginRespond loginRespond;
+	int t;
 
 	while(1){
 		printf("\nNhap ten tai khoan: ");
@@ -92,34 +119,28 @@ int login(int sockfd){
 	}
 	strcpy(user.password,pass);
 	user.typeRequest=LOGIN_REQUEST;
-	memcpy(mesg,&user,LEN);
-	send(sockfd, mesg,LEN, 0);
+	memcpy(mesg,&user,204);
+	send(currentSockFD, mesg,204, 0);
+	strcpy(mesg,"");
+	recv(currentSockFD, mesg, LEN, 0);
 	respond=(*(Respond*)mesg);
+	
 	if(check_type(respond) == LOGIN_RESPOND){
-		loginrespond=(*(LoginRespond*)mesg);
-			if (strlen(loginrespond.messenger > 0))
-			puts(loginrespond.messenger);
-		else 
-			printf("Data null\n");
-		if(loginrespond.loginResult == LOGIN_SUCCESS){
-			printf("\nDang nhap thanh cong");
+		loginRespond=(*(LoginRespond*)mesg);
+		if(loginRespond.loginResult == LOGIN_SUCCESS){
+			printf("\n%s",loginRespond.messenger);
 			return 1;
-		}
-		if(loginrespond.loginResult == LOGIN_INVALID_USERNAME){
-			printf("\nTai khoan khong dung");
+		}else if(loginRespond.loginResult == LOGIN_INVALID_USERNAME){
+			printf("\n%s",loginRespond.messenger);
+			return 0;
+		}else if(loginRespond.loginResult == LOGIN_INVALID_PASSWORD){
+			printf("\n%s",loginRespond.messenger);
+			return 0;
+		}else if(loginRespond.loginResult == LOGIN_ONLINING){
+			printf("\n%s",loginRespond.messenger);
 			return 0;
 		}
-		if(loginrespond.loginResult == LOGIN_INVALID_PASSWORD){
-			printf("\nMat khau khong dung");
-			return 0;
-		}
-		if(loginrespond.loginResult == LOGIN_ONLINE_EXISTED){
-			printf("\nTai khoan dang online");
-			return 0;
-		}
-	} else {
-		printf("ERROR\n");
-	}
+	} 
 
 	
 }
@@ -132,7 +153,7 @@ int sign_up(int sockfd){
 	int t;
 	RegisterRequest user;
 	Respond respond;
-	RegisterRespond registerrespond;
+	RegisterRespond registerRespond;
 
 	while(1){
 		printf("\nNhap ten tai khoan: ");
@@ -161,27 +182,26 @@ int sign_up(int sockfd){
 		if(strcmp(pass,comf_pass)==0) break;
 	}
 	strcpy(user.password,pass);
+	strcpy(user.passwordConfirm,comf_pass);
 	user.typeRequest=REGISTER_REQUEST;
 	memcpy(mesg,&user,LEN);
-	send(sockfd, mesg,LEN, 0);
-	recv(sockfd, mesg, LEN, 0);
+	send(currentSockFD, mesg,204, 0);
+	strcpy(mesg,"");
+	recv(currentSockFD, mesg, LEN, 0);
 	respond=(*(Respond*)mesg);
 	if(respond.typeRespond == REGISTER_RESPOND){
-		registerrespond=(*(RegisterRespond*)mesg);
-		if(registerrespond.registerResult == REGISTER_SUCCESS){
-			printf("\nDang ki thanh cong");
+		registerRespond=(*(RegisterRespond*)mesg);
+		if(registerRespond.registerResult == REGISTER_SUCCESS){
+			printf("\n%s",registerRespond.messenger);
 			return 1;
-		}
-		if(registerrespond.registerResult == REGISTER_INVALID_USERNAME){
-			printf("\nTai khoan loi");
+		}else if(registerRespond.registerResult == REGISTER_INVALID_USERNAME){
+			printf("\n%s",registerRespond.messenger);
 			return 0;
-		}
-		if(registerrespond.registerResult == REGISTER_INVALID_PASSWORD){
-			printf("\nMat khau loi");
+		}else if(registerRespond.registerResult == REGISTER_INVALID_PASSWORD){
+			printf("\n%s",registerRespond.messenger);
 			return 0;
-		}
-		if(registerrespond.registerResult == REGISTER_USER_EXISTED){
-			printf("\nTai khoan da ton tai");
+		}else if(registerRespond.registerResult == REGISTER_USER_EXISTED){
+			printf("\n%s",registerRespond.messenger);
 			return 0;
 		}
 	}
@@ -189,46 +209,37 @@ int sign_up(int sockfd){
 	
 }
 
-/*int answer_chat_request(int sockfd,char data[],User_List chat_list[]){
+/*void answer_chat_respond(ChatRespond chatRespond,User_List chatList[]){
 	int i;
-	char nich_name[LEN];
 	char mesg[LEN];
-	char *pch;
-	Form form_s,form_t;
 	char yes[2];
+	ChatRequest chatRequest;
 
-	strcpy(nich_name,data);
-	printf("\n@%s muon chat voi ban!!",nich_name);
+	
+	
+	printf("\n@%s muon chat voi ban!!",chatRespond.userName);
 	printf("\nBan co dong y(y/n): ");
 	fgets(yes,3,stdin);
 	if(yes[0] == 'y' || yes[0] == 'Y') {
-		add_partner(nich_name,chat_list);
-		form_t.type=1;
-		strcpy(form_t.data,nich_name);
-		//ep form_t ve char
-		form_t=form_t(char);
-		form_s.type=5;
-		strcpy(form_s.data,form_t);
-		//ep form_s ve char
-		mesg=form_s(char);
-		send(sockfd,mesg,strlen(mesg),0);
-		return 1;
+		add_partner(chatRespond.userName,chatList);
+		chatRequest.typeRequest=CHAT_REQUEST;
+		chatRequest.chatType=YES;
+		strcpy(chatRequest.userName,chatRespond.userName);
+		memcpy(mesg,&chatRequest);
+		send(currentSockFD,mesg,204,0);
+		return ;
 	}
 	else {
-		form_t.type=0;
-		strcpy(form_t.data,nich_name);
-		//ep form_t ve char
-		form_t=form_t(char);
-		form_s.type=5;
-		strcpy(form_s.data,form_t);
-		//ep form_s ve char
-		mesg=form_s(char);
-		send(sockfd,buff,strlen(buff),0);
-		return 0;
+		chatRequest.typeRequest=CHAT_REQUEST;
+		chatRequest.chatType=NO;
+		strcpy(chatRequest.userName,chatRespond.userName);
+		memcpy(mesg,&chatRequest);
+		send(currentSockFD,mesg,204,0);
+		return ;
 	}
 }*/
 
-/*void choose_user(int sockfd,User_List chat_list[]){
+/*void choose_user(int sockfd,User_List chatList[]){
 	int i,t,y,a;
 	User_List user_list[100];
 	char mesg[LEN],buff[LEN];
@@ -239,7 +250,7 @@ int sign_up(int sockfd){
 
 	request.typeRequest=GET_LIST_USER_ONLINE_REQUEST;
 	memcpy(mesg,&request);
-	send(sockfd,meag,strlen(meag),0);
+	send(sockfd,meag,204,0);
 	strcpy(mesg,"");
 	recv(sockfd,mesg,LEN,0);
 	respond=(*(Respond*)mesg);
@@ -298,11 +309,12 @@ int sign_up(int sockfd){
 	int max_user_list;
 	int rv,t,x;
 	char mesg[LEN];
-	User_List user_list[100];
-	User_List chat_list[10];
+	User_List userList[100];
+	User_List chatList[10];
 	fd_set readSet;
 	struct timeval tv;
 	Respond respond;
+	ChatRespond chatRespond;
 
 	while(1){
 		printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
@@ -338,7 +350,7 @@ int sign_up(int sockfd){
 				recv(sockfd,mesg,LEN,0);
 				respond=(*(Respond*)mesg);
 				if(respond.typeRespond == CHAT_RESPOND) {
-
+					TypeChatRespond(mesg,chatList,userList);
 				}
 			}
 		}
@@ -349,13 +361,9 @@ int sign_up(int sockfd){
 void main(){
 	int sockfd;
 	struct sockaddr_in serv_addr;
-	char choose[5];
+	char choose[2];
 	int t;
-	fd_set readSet;
-	struct timeval tv;
 
-	tv.tv_sec = 0;
-	tv.tv_usec = 0;
     serv_addr.sin_family = AF_INET;       
     serv_addr.sin_port = htons(5500);
     inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
@@ -369,41 +377,32 @@ void main(){
        printf("\nConnect loi!!\n");
        return ;
     }else
-    FD_ZERO(&readSet);
-
     while(1){
+    	currentSockFD = sockfd;
     	printf("\n*****MENU*****\n");
     	printf("\n1.Dang nhap\n2.Dang ki\n3.Thoat" );
     	printf("\nBan chon: ");
-    	FD_SET(fileno(stdin), &readSet);
-    	FD_SET(sockfd, &readSet);
-    	select(sockfd+1, &readSet, NULL, NULL, &tv);
+    	fgets(choose,3,stdin);
+    	switch(choose[0]){
 
-    		fgets(choose,3,stdin);
-    		switch(choose[0]){
-
-	    		case '1': 
-	    				printf("\nBan chon Dang Nhap");
-	    				t = login(sockfd);
-	    			    //if(t == 1) menu(sockfd);
-	    			    
-	    			    break;
-	    		case '2': 	
-	    				printf("\nBan chon Dang Ki");
-	    				t = sign_up(sockfd);
-	    			    //if(t == 1) menu(sockfd);
-	    			    
-	    			    break;
-	    		case '3':
-	    			return;
-	    		default : break;
-    		
-    	}
-
-    	if (FD_ISSET(sockfd, &readSet)) {
+    		case '1': 
+    				printf("\nBan chon Dang Nhap");
+    				t = login();
+    			    //if(t == 1) menu(sockfd);
+    			    
+    			    break;
+    		case '2': 	
+    				printf("\nBan chon Dang Ki");
+    				//t = sign_up();
+    			    //if(t == 1) menu(sockfd);
+    			    
+    			    break;
+    		case '3':
+    			return;
+    		default : break;
+    			
 
     	}
-    	
     }
 
 
