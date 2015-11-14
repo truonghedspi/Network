@@ -50,6 +50,7 @@ int check_type(Respond respond){
 	return respond.typeRespond;
 }
 
+//phan biet loai chat voi user
 void type_chat_respond(char buff[],User_List chatList[]){
 
 	ChatRespond chatRespond;
@@ -76,6 +77,7 @@ void type_chat_respond(char buff[],User_List chatList[]){
 	}
 }
 
+//phan biet loai chat voi room
 void type_chat_room_respond(char buff[],User_List chatList[]){
 	ChatRoomRespond chatRoomRespond;
 
@@ -94,6 +96,7 @@ void type_chat_room_respond(char buff[],User_List chatList[]){
 	}
 }
 
+//them doi tuong vao danh sach chatList
 int add_partner(char userName[],User_List chatList[],TypeChatList type){
 	int i=0;
 	while(strcmp(chatList[i].userName,"") != 0 ){
@@ -103,7 +106,7 @@ int add_partner(char userName[],User_List chatList[],TypeChatList type){
 	chatList[i].type=type;
 	return i+1;
 }
-
+//xoa doi tuong khoi danh sach chatList
 int del_partner(char userName[],User_List chatList[]){
 	int i=0;
 	while(1){
@@ -238,9 +241,12 @@ int sign_up(){
 	}
 }
 
+//tra loi yeu cau moi vao nhom Chat
 int answer_invite_room(){
 
 }
+
+//tra loi yeu cau moi Chat
 int answer_ask_chat(ChatRespond chatRespond,User_List chatList[]){
 	int i;
 	char mesg[LEN];
@@ -266,6 +272,7 @@ int answer_ask_chat(ChatRespond chatRespond,User_List chatList[]){
 	}
 }
 
+
 int take_user_list(GetOnlineUserListRespond userListRespond,User_List userList[]){
 	int i=0;
 
@@ -276,6 +283,7 @@ int take_user_list(GetOnlineUserListRespond userListRespond,User_List userList[]
 	return i;
 }
 
+//gui yeu cau lay danh sach user online
 void online_user_list_request(){
 	GetOnlineUserListRequest	listRequest;
 	char mesg[LEN];
@@ -286,6 +294,7 @@ void online_user_list_request(){
 	return;
 }
 
+//chon user de chat
 int choose_user(char mesg[],User_List chatList[]){
 	int i,t,y,TOTAL_USER;
 	User_List userList[100];
@@ -317,6 +326,7 @@ int choose_user(char mesg[],User_List chatList[]){
 	}	
 }
 
+//gui noi Chat
 int send_chat(char userName[],char buff[],ChatType type){
 	ChatRequest chatRequest;
 	char mesg[LEN];
