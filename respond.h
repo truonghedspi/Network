@@ -10,9 +10,8 @@ typedef enum {
 	LOGIN_RESPOND,
 	LOGOUT_RESPOND,
 	REGISTER_RESPOND,
-	CHAT_RESPOND,
-	GET_LIST_USER_ONLINE_RESPOND,
-	GET_LIST_ROOM_RESPOND
+	CHAT_RESPOND,CHAT_ROOM_RESPOND,
+	GET_ONLINE_USER_LIST_RESPOND
 }RespondType;
 
 typedef struct _Respond{
@@ -33,6 +32,7 @@ typedef struct _LoginRespond {
 	char messenger[196];
 }LoginRespond;
 
+
 typedef enum {
 	LOGOUT_SUCCESS,
 	LOGOUT_NOT_ONLINE //thang do chua online
@@ -43,6 +43,7 @@ typedef struct _LogoutRespond {
 	LogoutResult logoutResult;
 	char messenger[196];
 }LogoutRespond;
+
 
 typedef enum {
 	REGISTER_SUCCESS,
@@ -56,26 +57,33 @@ typedef struct _RegisterRespond {
 	RegisterResult registerResult;
 	char messenger[196];
 }RegisterRespond;
+
+
 typedef enum {
 	LIST_EMPTY,
 	LIST_NON_EMPTY
 }ListResult;
+
 typedef struct _GetOnlineUserListRespond {
 	RespondType typeRespond;
 	ListResult listResult;
-	char listOnlineUser[10][20];
+	char onlineUserList[100][20];
 }GetOnlineUserListRespond;
 
-/*typedef enum {
-	CHAT,QUIT_CHAT,
-	ASK_CHAT,YES,NO
-}ChatTypeRespond;
-*/
+
 typedef struct _ChatRespond {
 	RespondType typeRespond;
 	ChatType chatType;
 	char userName[50];
 	char messenger[146];
 }ChatRespond;
+
+typedef struct _ChatRoomRespond {
+	RespondType typeRespond;
+	ChatType chatType;
+	char userName[20];
+	char roomName[30];
+	char messenger[146];
+}ChatRoomRespond;
 
 #endif
