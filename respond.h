@@ -62,6 +62,7 @@ typedef struct _RegisterRespond {
 
 typedef struct _GetOnlineUserListRespond {
 	RespondType typeRespond;
+	int numUsersOnline;
 	char onlineUserList[10][20];
 }GetOnlineUserListRespond;
 
