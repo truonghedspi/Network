@@ -96,3 +96,8 @@ void myERROR(char * mes) {
 	printf("%s\n", mes);
 	exit(1);
 }
+
+int checkWhiteSpace(char* str) {
+	char key[] = { ' ', '\n', '\t', 0 };
+  	return strpbrk(str, key) == NULL?0:1;
+}

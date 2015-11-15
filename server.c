@@ -4,17 +4,27 @@
 #include "respond.h"
 #include "my_socket.h"
 
+#define MAX_LENGTH_USERNAME 15
+#define MIN_LENGTH_USERNAME 6
+#define MAX_LENGTH_PASSWORD 15
+#define MIN_LENGTH_PASSWORD 6
+
+char key[] = { ' ', '\n', '\t', 0 };
 const int OPEN_MAX = 50;
 const int MAX_USER = 10;
 const int BACKLOG = 50;
 int currentSockFD = -1;
 int numUserRegisted = 0;
-/*struct pollfd clients[OPEN_MAX];
-User userRegisted[OPEN_MAX];*/
+struct pollfd clients[OPEN_MAX];
+int maxIndex;
+User userRegisted[OPEN_MAX];
+int SIZE_BLOCK_REQUEST;
+int SIZE_BLOCK_RESPOND;
 
 void setCurrentSockFD(int sockFD) {
 	currentSockFD = sockFD;
 }
+
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -43,7 +53,7 @@ int initConnect(const int PORT) {
 }
 
 //read, write file
-int readUsersFile(char * fileName, User userRegisted[]) {
+int readUsersFile(char * fileName) {
 	FILE *f;
 	char userName[20],password[20];
 	int i = 0;
@@ -96,61 +106,118 @@ void makeUser(User* user, char* userName, char * password) {
 	strcpy(user->password, password);
 }
 
-int sendRespond(Respond respond) {
+int sendRespond(void * respond) {
 	char buff[250];
 
-	memcpy(buff, &respond, sizeof(Respond));
-	return send(currentSockFD, buff, sizeof(Respond), 0);
+	memcpy(buff, respond, sizeof(Respond));
+	return send(currentSockFD, buff, SIZE_BLOCK_RESPOND, 0);
 }
 
-void handleLoginRequest(Request request,User userRegisted[]) {
-	LoginRequest loginRequest;
+int sendLoginRespond(LoginResult loginResult, char* messenger) {
 	LoginRespond loginRespond;
-	Respond respond;
+
+	loginRespond.typeRespond = LOGIN_RESPOND;
+	loginRespond.loginResult = loginResult;
+	strcpy(loginRespond.messenger, messenger);
+
+	return sendRespond(&loginRespond);
+}
+
+int sendRegisterRespond(RegisterResult registerResult, char* messenger) {
+	RegisterRespond registerRespond;
+
+	registerRespond.typeRespond = REGISTER_RESPOND;
+	registerRespond.registerResult = registerResult;
+	strcpy(registerRespond.messenger, messenger);
+
+	return sendRespond(&registerRespond);
+}
+
+void handleLoginRequest(Request request) {
+	LoginRequest loginRequest;
 	User user;
 	int userIndex = -1;
 
 	printf("User Login!\n");
-	memcpy(&loginRequest, &request, sizeof(LoginRequest));
-	makeUser(&user, loginRequest.userName, loginRequest.password);
-	loginRespond.typeRespond = LOGIN_RESPOND;
-	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
+	memcpy(&loginRequest, &request, SIZE_BLOCK_REQUEST);
 
+	makeUser(&user, loginRequest.userName, loginRequest.password);
+	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
 	if (userIndex < 0) {
-		loginRespond.loginResult = LOGIN_INVALID_USERNAME;
-		strcpy(loginRespond.messenger, "User name not found!");
-		memcpy(&respond, &loginRespond, sizeof(Respond));
-		sendRespond(respond);
+		sendLoginRespond(LOGIN_INVALID_USERNAME,"User name not found!");
 		return;
-	}else if (strcmp(user.password, userRegisted[userIndex].password) != 0) {
-		loginRespond.loginResult = LOGIN_INVALID_PASSWORD;
-		strcpy(loginRespond.messenger, "Password invalid!");
-		memcpy(&respond, &loginRespond, sizeof(Respond));
-		sendRespond(respond);
+	}
+	if (strcmp(user.password, userRegisted[userIndex].password) != 0) {
+		sendLoginRespond(LOGIN_INVALID_PASSWORD, "Password invalid!");
 		return;
-	}else if (userRegisted[userIndex].isOnline == TRUE) {
-		loginRespond.loginResult = LOGIN_ONLINING;
-		strcpy(loginRespond.messenger, "User is onlining!");
-		memcpy(&respond, &loginRespond, sizeof(Respond));
-		sendRespond(respond);
+	}
+	 if (userRegisted[userIndex].isOnline == TRUE) {
+		sendLoginRespond(LOGIN_ONLINING, "User is onlining!");
 		return;
-	}else{
-		userRegisted[userIndex].sockFD=currentSockFD;
-		userRegisted[userIndex].isOnline=TRUE;
-		loginRespond.loginResult = LOGIN_SUCCESS;
-		strcpy(loginRespond.messenger, "Log in success");
-		memcpy(&respond, &loginRespond, sizeof(Respond));
-		sendRespond(respond);
 	}
 
+	userRegisted[userIndex].isOnline=TRUE;
+	userRegisted[userIndex].sockFD = currentSockFD;
+	printf("Client %s login success\n", user.userName);
+	sendLoginRespond(LOGIN_SUCCESS, "Login success");
 }
+
+
 
 void handleLogoutRequest(Request request) {
 
 }
 
+int checkValidPassword(char* password) {
+	if (strlen(password) < 6 || strlen(password) > 15) {
+		return FALSE;
+	}
+	if (checkWhiteSpace(password)) {
+		return FALSE;
+	}
+	return TRUE;
+}
+
+int checkValidUserName(char* userName) {
+ 	return checkValidPassword(userName);
+}
+
+
 void handleRegisterRequest(Request request) {
-	
+	RegisterRequest registerRequest;
+	User user;
+	int userIndex = -1;
+
+	//Tranform to RegisterRequest
+	printf("User Regist\n");
+	memcpy(&registerRequest, &request, SIZE_BLOCK_REQUEST);
+
+	//Check valid
+	if (strcmp(registerRequest.password, registerRequest.passwordConfirm) != 0) {
+		sendRegisterRespond(REGISTER_INVALID_PASSWORD, "Password != password Confirm ");
+		return;
+	}
+
+	if (!checkValidPassword(registerRequest.password)) {
+		sendRegisterRespond(REGISTER_INVALID_PASSWORD, "Password must 6 ~ 15 and have no white space!");
+		return;
+	}
+
+	if (!checkValidUserName(registerRequest.userName)) {
+		sendRegisterRespond(REGISTER_INVALID_USERNAME, "User Name must 6 ~ 15 and have no white space!");
+		return;	
+	}
+
+	//make User with username + pasword
+	makeUser(&user, registerRequest.userName, registerRequest.password);
+	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
+
+	if (userIndex >= 0 && userIndex < numUserRegisted) {
+		sendRegisterRespond(REGISTER_USER_EXISTED, "User existed!");
+		return;
+	}
+
+	sendRegisterRespond(REGISTER_SUCCESS, "Register success");
 }
 
 void handleChatWithFriendRequest(Request request) {
@@ -161,13 +228,14 @@ void handleGetListOnlineUserRequest(Request request) {
 
 }
 
-void recognizeRequest(char* buff,User userRegisted[]) {
+void recognizeRequest(char* buff) {
 	Request request;
 	request = *((Request*) buff);
 
 	switch(request.typeRequest) {
 		case LOGIN_REQUEST:
-			handleLoginRequest(request,userRegisted);
+			handleLoginRequest(request);
+			printf("Done hanlde request\n");
 			break;
 
 		case LOGOUT_REQUEST:
@@ -182,7 +250,7 @@ void recognizeRequest(char* buff,User userRegisted[]) {
 			handleChatWithFriendRequest(request);
 			break;
 
-		case GET_LIST_USER_ONLINE_REQUEST:
+		case GET_ONLINE_USER_LIST_REQUEST:
 			handleGetListOnlineUserRequest(request);
 			break;
 	}
@@ -192,13 +260,13 @@ int main() {
 	const int PORT = 5500;
 	int listenFD, clientFD, sockFD;
 	socklen_t clientLen ;
-	int nReady, maxIndex, i,  size;
+	int nReady, i,  size;
 	struct sockaddr_in  clientAddr;
 	char buff[sizeof(Request)+1];
-	struct pollfd clients[OPEN_MAX];
-	User userRegisted[OPEN_MAX];
 
-	numUserRegisted = readUsersFile("data.txt", userRegisted);
+	SIZE_BLOCK_REQUEST = sizeof(Request);
+	SIZE_BLOCK_RESPOND = sizeof(Respond);
+	numUserRegisted = readUsersFile("data.txt");
 	for (i = 0; i < numUserRegisted; ++i) {
 		userRegisted[i].isOnline = FALSE;
 	}
@@ -214,7 +282,7 @@ int main() {
 	maxIndex = 0;
 
 	while(1) {
-		nReady = poll(clients, maxIndex + 1, 5600);
+		nReady = poll(clients, maxIndex + 1, 0);
 		if (clients[0].revents & POLLRDNORM) {
 			clientLen = sizeof (clientAddr);
 			clientFD = accept(listenFD, (struct sockaddr *) &clientAddr, &clientLen);
@@ -240,12 +308,14 @@ int main() {
 		}
 
 		for (i = 1; i <= maxIndex; ++i) {
-			if ( (sockFD = clients[i].fd) < 0) {
+			sockFD = clients[i].fd;
+			if (sockFD < 0) {
 				continue;
 			}
-			if (clients[i].revents & (POLLRDNORM | POLLERR)) {
+			if (clients[i].revents & (POLLRDNORM | POLLWRNORM)) {
+					printf("Co hang\n");
 					setCurrentSockFD(sockFD);
-					size = recv(currentSockFD, buff, 204, 0);
+					size = recv(currentSockFD, buff, SIZE_BLOCK_REQUEST, 0);
 					buff[size]='\0';
 					if (size < 0) {
 						if (errno == ECONNRESET) {
@@ -262,7 +332,7 @@ int main() {
 						clients[i].fd = -1;
 					} else {
 						printf("recognizeRequest\n");
-						recognizeRequest(buff,userRegisted);
+						recognizeRequest(buff);
 					}
 					
 			}
