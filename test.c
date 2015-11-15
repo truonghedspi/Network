@@ -10,7 +10,8 @@ char* check_whitespace (char *str)
 }
 
 int main() {
-	char buff[10] = "Truo ng\n";
+	char buff[10][19];
 
-	printf("%s\n", check_whitespace(buff));
+
+	printf("%d\n", sizeof(buff));
 }

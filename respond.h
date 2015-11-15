@@ -60,15 +60,9 @@ typedef struct _RegisterRespond {
 }RegisterRespond;
 
 
-typedef enum {
-	LIST_EMPTY,
-	LIST_NON_EMPTY
-}ListResult;
-
 typedef struct _GetOnlineUserListRespond {
 	RespondType typeRespond;
-	ListResult listResult;
-	char onlineUserList[100][20];
+	char onlineUserList[10][20];
 }GetOnlineUserListRespond;
 
 

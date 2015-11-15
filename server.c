@@ -8,24 +8,22 @@
 #define MIN_LENGTH_USERNAME 6
 #define MAX_LENGTH_PASSWORD 15
 #define MIN_LENGTH_PASSWORD 6
+#define SIZE_BLOCK_REQUEST 1000
+#define SIZE_BLOCK_RESPOND 1000
+
+char key[] = { ' ', '\n', '\t', 0 };
 #define OPEN_MAX  50
 #define MAX_USER  10
 #define BACKLOG  50
-
-char key[] = { ' ', '\n', '\t', 0 };
-
 int currentSockFD = -1;
 int numUserRegisted = 0;
 struct pollfd clients[OPEN_MAX];
 int maxIndex;
 User userRegisted[OPEN_MAX];
-int SIZE_BLOCK_REQUEST;
-int SIZE_BLOCK_RESPOND;
 
 void setCurrentSockFD(int sockFD) {
 	currentSockFD = sockFD;
 }
-
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -109,9 +107,7 @@ void makeUser(User* user, char* userName, char * password) {
 
 int sendRespond(void * respond) {
 	char buff[250];
-
-	memcpy(buff, respond, sizeof(Respond));
-	return send(currentSockFD, buff, SIZE_BLOCK_RESPOND, 0);
+	return send(currentSockFD, (char* )buff, SIZE_BLOCK_RESPOND, 0);
 }
 
 int sendLoginRespond(LoginResult loginResult, char* messenger) {
@@ -164,7 +160,6 @@ void handleLoginRequest(Request request) {
 }
 
 
-
 void handleLogoutRequest(Request request) {
 
 }
@@ -183,6 +178,10 @@ int checkValidUserName(char* userName) {
  	return checkValidPassword(userName);
 }
 
+int addUser(User user, User userRegisted[], int numUserRegisted) {
+	userRegisted[numUserRegisted] = user;
+	return ++numUserRegisted;
+}
 
 void handleRegisterRequest(Request request) {
 	RegisterRequest registerRequest;
@@ -218,15 +217,47 @@ void handleRegisterRequest(Request request) {
 		return;
 	}
 
+
 	sendRegisterRespond(REGISTER_SUCCESS, "Register success");
+	//update status
+	user.isOnline = FALSE;
+	user.sockFD = -1;
+	numUserRegisted =  addUser(user, userRegisted, numUserRegisted);
+
+	//write to file
+	writeUsersFile("data.txt",user);
 }
 
 void handleChatWithFriendRequest(Request request) {
 
 }
 
-void handleGetListOnlineUserRequest(Request request) {
+void sendGetOnlineUserListRespond() {
+	GetOnlineUserListRespond getOnlineUserListRespond;
+	int i = 0, numUsersOnline = 0;
+	char onlineUserList[10][20];
 
+	getOnlineUserListRespond.typeRespond = GET_ONLINE_USER_LIST_RESPOND;
+	
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (userRegisted[i].isOnline) {
+			strcpy(onlineUserList[numUsersOnline], userRegisted[i].userName);
+			++numUsersOnline;
+			if (numUsersOnline == 10) {
+				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 200);
+				sendRespond(&getOnlineUserListRespond);
+				numUsersOnline = 0;
+			}
+		}
+	}
+	//
+
+	memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
+	sendRespond(&getOnlineUserListRespond);
+}
+
+void handleGetListOnlineUserRequest(Request request) {
+	sendGetOnlineUserListRespond();
 }
 
 void recognizeRequest(char* buff) {
@@ -236,7 +267,6 @@ void recognizeRequest(char* buff) {
 	switch(request.typeRequest) {
 		case LOGIN_REQUEST:
 			handleLoginRequest(request);
-			printf("Done hanlde request\n");
 			break;
 
 		case LOGOUT_REQUEST:
@@ -265,8 +295,6 @@ int main() {
 	struct sockaddr_in  clientAddr;
 	char buff[sizeof(Request)+1];
 
-	SIZE_BLOCK_REQUEST = sizeof(Request);
-	SIZE_BLOCK_RESPOND = sizeof(Respond);
 	numUserRegisted = readUsersFile("data.txt");
 	for (i = 0; i < numUserRegisted; ++i) {
 		userRegisted[i].isOnline = FALSE;
@@ -313,14 +341,13 @@ int main() {
 			if (sockFD < 0) {
 				continue;
 			}
-			if (clients[i].revents & POLLRDNORM) {
+			if (clients[i].revents & (POLLRDNORM | POLLWRNORM)) {
 					printf("Co hang\n");
 					setCurrentSockFD(sockFD);
 					size = recv(currentSockFD, buff, SIZE_BLOCK_REQUEST, 0);
 					buff[size]='\0';
 					if (size < 0) {
 						if (errno == ECONNRESET) {
-							printf("ECONNRESET\n");
                       		close(currentSockFD);
 							clients[i].fd = -1;
 
@@ -336,13 +363,8 @@ int main() {
 						printf("recognizeRequest\n");
 						recognizeRequest(buff);
 					}
-					if (--nReady <= 0)
-						break;
-					
 			}
 		}
-
 	}
-
 	return 0;
 }
