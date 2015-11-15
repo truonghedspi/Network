@@ -21,5 +21,6 @@ int getIntWithMess(char* mes);
 char getCharWithMess(char* mes);
 float getFloatWithMess(char* mes);
 void myERROR(char * mes);
+int checkWhiteSpace(char* str);
 
 #endif

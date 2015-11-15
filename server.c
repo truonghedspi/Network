@@ -106,8 +106,7 @@ void makeUser(User* user, char* userName, char * password) {
 }
 
 int sendRespond(void * respond) {
-	char buff[250];
-	return send(currentSockFD, (char* )buff, SIZE_BLOCK_RESPOND, 0);
+	return send(currentSockFD, (char* )respond, SIZE_BLOCK_RESPOND, 0);
 }
 
 int sendLoginRespond(LoginResult loginResult, char* messenger) {
@@ -130,14 +129,11 @@ int sendRegisterRespond(RegisterResult registerResult, char* messenger) {
 	return sendRespond(&registerRespond);
 }
 
-void handleLoginRequest(Request request) {
-	LoginRequest loginRequest;
+void handleLoginRequest(LoginRequest loginRequest) {
 	User user;
 	int userIndex = -1;
 
 	printf("User Login!\n");
-	memcpy(&loginRequest, &request, SIZE_BLOCK_REQUEST);
-
 	makeUser(&user, loginRequest.userName, loginRequest.password);
 	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
 	if (userIndex < 0) {
@@ -160,7 +156,7 @@ void handleLoginRequest(Request request) {
 }
 
 
-void handleLogoutRequest(Request request) {
+void handleLogoutRequest(LogoutRequest logoutRequest) {
 
 }
 
@@ -183,14 +179,12 @@ int addUser(User user, User userRegisted[], int numUserRegisted) {
 	return ++numUserRegisted;
 }
 
-void handleRegisterRequest(Request request) {
-	RegisterRequest registerRequest;
+void handleRegisterRequest(RegisterRequest registerRequest) {
 	User user;
 	int userIndex = -1;
 
 	//Tranform to RegisterRequest
 	printf("User Regist\n");
-	memcpy(&registerRequest, &request, SIZE_BLOCK_REQUEST);
 
 	//Check valid
 	if (strcmp(registerRequest.password, registerRequest.passwordConfirm) != 0) {
@@ -228,7 +222,7 @@ void handleRegisterRequest(Request request) {
 	writeUsersFile("data.txt",user);
 }
 
-void handleChatWithFriendRequest(Request request) {
+void handleChatWithFriendRequest(ChatRequest chatRequest) {
 
 }
 
@@ -256,33 +250,49 @@ void sendGetOnlineUserListRespond() {
 	sendRespond(&getOnlineUserListRespond);
 }
 
-void handleGetListOnlineUserRequest(Request request) {
+void handleGetListOnlineUserRequest() {
 	sendGetOnlineUserListRespond();
 }
 
 void recognizeRequest(char* buff) {
 	Request request;
-	request = *((Request*) buff);
+	LoginRequest loginRequest;
+	LogoutRequest logoutRequest;
+	RegisterRequest registerRequest;
+	ChatRequest chatRequest;
+	GetOnlineUserListRequest getOnlineUserListRequet;
+	//ChatRoomRequest chatRoomRequest;
 
+	request = *((Request*) buff);
 	switch(request.typeRequest) {
 		case LOGIN_REQUEST:
-			handleLoginRequest(request);
+			loginRequest = *((LoginRequest* )buff);
+			handleLoginRequest(loginRequest);
 			break;
 
 		case LOGOUT_REQUEST:
-			handleLogoutRequest(request);
+			logoutRequest = *((LogoutRequest* )buff);
+			handleLogoutRequest(logoutRequest);
 			break;
 
 		case REGISTER_REQUEST:
-			handleRegisterRequest(request);
+			registerRequest = *((RegisterRequest* )buff);
+			handleRegisterRequest(registerRequest);
 			break;
 
 		case CHAT_REQUEST:
-			handleChatWithFriendRequest(request);
+			chatRequest = *((ChatRequest* )buff);
+			handleChatWithFriendRequest(chatRequest);
 			break;
 
 		case GET_ONLINE_USER_LIST_REQUEST:
-			handleGetListOnlineUserRequest(request);
+			getOnlineUserListRequet = *((GetOnlineUserListRequest* )buff);
+			handleGetListOnlineUserRequest();
+			break;
+
+		case CHAT_ROOM_REQUEST:
+			//chatRoomRequest = *((ChatRoomRequest* )buff);
+			//handleChatRoomRequest(chatRoomRequest);
 			break;
 	}
 }
