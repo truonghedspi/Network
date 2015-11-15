@@ -8,11 +8,12 @@
 #define MIN_LENGTH_USERNAME 6
 #define MAX_LENGTH_PASSWORD 15
 #define MIN_LENGTH_PASSWORD 6
+#define OPEN_MAX  50
+#define MAX_USER  10
+#define BACKLOG  50
 
 char key[] = { ' ', '\n', '\t', 0 };
-const int OPEN_MAX = 50;
-const int MAX_USER = 10;
-const int BACKLOG = 50;
+
 int currentSockFD = -1;
 int numUserRegisted = 0;
 struct pollfd clients[OPEN_MAX];
@@ -312,13 +313,14 @@ int main() {
 			if (sockFD < 0) {
 				continue;
 			}
-			if (clients[i].revents & (POLLRDNORM | POLLWRNORM)) {
+			if (clients[i].revents & POLLRDNORM) {
 					printf("Co hang\n");
 					setCurrentSockFD(sockFD);
 					size = recv(currentSockFD, buff, SIZE_BLOCK_REQUEST, 0);
 					buff[size]='\0';
 					if (size < 0) {
 						if (errno == ECONNRESET) {
+							printf("ECONNRESET\n");
                       		close(currentSockFD);
 							clients[i].fd = -1;
 
@@ -334,6 +336,8 @@ int main() {
 						printf("recognizeRequest\n");
 						recognizeRequest(buff);
 					}
+					if (--nReady <= 0)
+						break;
 					
 			}
 		}

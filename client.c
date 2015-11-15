@@ -156,7 +156,9 @@ int login(){
 	strcpy(user.password,pass);
 	user.typeRequest=LOGIN_REQUEST;
 	memcpy(mesg,&user,204);
-	send(currentSockFD, mesg,204, 0);
+	if (send(currentSockFD, mesg,204, 0) < 0 ) {
+		printf("Loi\n");
+	}
 	strcpy(mesg,"");
 	recv(currentSockFD, mesg, LEN, 0);
 	respond=(*(Respond*)mesg);
