@@ -25,6 +25,13 @@ void setCurrentSockFD(int sockFD) {
 	currentSockFD = sockFD;
 }
 
+void setOnline(int sockFD) {
+
+}
+
+int notifyAll() {
+	
+}
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -237,20 +244,33 @@ void handleChatWithFriendRequest(Request request) {
 
 void sendGetOnlineUserListRespond() {
 	GetOnlineUserListRespond getOnlineUserListRespond;
-	int i;
+	int i = 0, numUsersOnline = 0;
+	char onlineUserList[10][19];
 
 	getOnlineUserListRespond.typeRespond = GET_ONLINE_USER_LIST_RESPOND;
-	getOnlineUserListRespond.onlineUserList = NULL;
+	getOnlineUserListRespond.numUsersOnline = 0;
 
 	for (i = 0; i < numUserRegisted; ++i) {
-		
+		if (userRegisted[i].isOnline) {
+			onlineUserList[numUsersOnline] = userRegisted[i].userName;
+			++numUsersOnline;
+			if (numUsersOnline == 10) {
+				getOnlineUserListRespond.numUsersOnline = numUsersOnline;
+				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
+				sendRespond(&getOnlineUserListRespond);
+				numUsersOnline = 0;
+			}
+		}
 	}
+	//
 
+	getOnlineUserListRespond.numUsersOnline = numUsersOnline;
+	memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
+	sendRespond(&getOnlineUserListRespond);
 }
 
 void handleGetListOnlineUserRequest(Request request) {
-	GetOnlineUserListRequest getOnlineUserListRequest;
-
+	sendGetOnlineUserListRespond();
 }
 
 void recognizeRequest(char* buff) {
@@ -260,7 +280,6 @@ void recognizeRequest(char* buff) {
 	switch(request.typeRequest) {
 		case LOGIN_REQUEST:
 			handleLoginRequest(request);
-			printf("Done hanlde request\n");
 			break;
 
 		case LOGOUT_REQUEST:
