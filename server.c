@@ -10,9 +10,9 @@
 #define MIN_LENGTH_PASSWORD 6
 
 char key[] = { ' ', '\n', '\t', 0 };
-const int OPEN_MAX = 50;
-const int MAX_USER = 10;
-const int BACKLOG = 50;
+#define OPEN_MAX  50
+#define MAX_USER  10
+#define BACKLOG  50
 int currentSockFD = -1;
 int numUserRegisted = 0;
 struct pollfd clients[OPEN_MAX];
@@ -182,6 +182,10 @@ int checkValidUserName(char* userName) {
  	return checkValidPassword(userName);
 }
 
+int addUser(User user, User userRegisted[], int numUserRegisted) {
+	userRegisted[numUserRegisted] = user;
+	return ++numUserRegisted;
+}
 
 void handleRegisterRequest(Request request) {
 	RegisterRequest registerRequest;
@@ -217,7 +221,15 @@ void handleRegisterRequest(Request request) {
 		return;
 	}
 
+
 	sendRegisterRespond(REGISTER_SUCCESS, "Register success");
+	//update status
+	user.isOnline = FALSE;
+	user.sockFD = -1;
+	numUserRegisted =  addUser(user, userRegisted, numUserRegisted);
+
+	//write to file
+	writeUsersFile("data.txt",user);
 }
 
 void handleChatWithFriendRequest(Request request) {
@@ -334,11 +346,8 @@ int main() {
 						printf("recognizeRequest\n");
 						recognizeRequest(buff);
 					}
-					
 			}
 		}
-
 	}
-
 	return 0;
 }
