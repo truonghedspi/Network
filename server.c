@@ -235,7 +235,21 @@ void handleChatWithFriendRequest(Request request) {
 
 }
 
+void sendGetOnlineUserListRespond() {
+	GetOnlineUserListRespond getOnlineUserListRespond;
+	int i;
+
+	getOnlineUserListRespond.typeRespond = GET_ONLINE_USER_LIST_RESPOND;
+	getOnlineUserListRespond.onlineUserList = NULL;
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		
+	}
+
+}
+
 void handleGetListOnlineUserRequest(Request request) {
+	GetOnlineUserListRequest getOnlineUserListRequest;
 
 }
 
