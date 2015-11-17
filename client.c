@@ -158,13 +158,10 @@ int login(){
 	strcpy(user.password,pass);
 	user.typeRequest=LOGIN_REQUEST;
 	memcpy(mesg,&user,204);
-	if (send(currentSockFD, mesg,204, 0) < 0 ) {
-		printf("Loi\n");
-	}
+	send(currentSockFD, mesg,204, 0);
 	strcpy(mesg,"");
 	recv(currentSockFD, mesg, 204, 0);
 	respond=(*(Respond*)mesg);
-	
 	if(check_type(respond) == LOGIN_RESPOND){
 		loginRespond=(*(LoginRespond*)mesg);
 		if(loginRespond.loginResult == LOGIN_SUCCESS){
@@ -179,8 +176,9 @@ int login(){
 		}else if(loginRespond.loginResult == LOGIN_ONLINING){
 			printf("\n%s",loginRespond.messenger);
 			return 0;
-		}else printf("OKE\n");
-	} 	
+		}
+
+	}
 }
 
 int sign_up(){
@@ -360,6 +358,8 @@ int choose_user(char mesg[]){
 		printf("\nKhong co user nao online!!");
 		return 0;
 	}else if(userListRespond.numUsersOnline >0 ){
+		printf("\nCO %d User online",userListRespond.numUsersOnline);
+		printf("UESR%s\n",userListRespond.onlineUserList[1] );
 		TOTAL_USER=take_user_list(userListRespond);
 		for ( i = 0; i < TOTAL_USER; i++){
 			printf("\n%d.@%s",i+1,userList[i].userName);
@@ -500,24 +500,31 @@ void menu(){
 	Respond respond;
 	ChatRespond chatRespond;
 
-	while(1){
-		printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
+	
+		/*printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
 		printf("\n1.Chon user dang online de chat");
 		printf("\n2.Tao phong chat");
 		printf("\n3.Moi ban vao phong chat");
 		printf("\n4.Thoat");
-		printf("\nBan chon: ");
-		printf("\n");
+		printf("\nBan chon: ");*/
 		while(1){
 			tv.tv_sec = 1;
 			tv.tv_usec =0;
 			FD_SET(currentSockFD, &readSet);
 			FD_SET(fileno(stdin), &readSet);
-			select(currentSockFD +1, &readSet, NULL, NULL, &tv);
-	
+			printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
+			printf("\n1.Chon user dang online de chat");
+			printf("\n2.Tao phong chat");
+			printf("\n3.Moi ban vao phong chat");
+			printf("\n4.Thoat");
+			printf("\n");
+			select(currentSockFD +1, &readSet, NULL, NULL, NULL);
 			if(FD_ISSET(currentSockFD, &readSet)){
 				strcpy(mesg,"");
-				recv(currentSockFD,mesg,LEN,0);
+				if(recv(currentSockFD,mesg,LEN,0)){
+					close(currentSockFD);
+					return ;
+				}
 				respond=(*(Respond*)mesg);
 				if(check_type(respond) == CHAT_ROOM_RESPOND){
 					type_chat_room_respond(mesg);
@@ -530,6 +537,7 @@ void menu(){
 					chatting();
 				}
 			}else if (FD_ISSET(fileno(stdin), &readSet)){
+				
 				fgets(choose,3,stdin);
 				switch(choose[0]){
 		    		case '1' :
@@ -551,8 +559,7 @@ void menu(){
 		    	}
 			} 
 		}
-	}
-
+	
 }
 
 void main(){
@@ -585,7 +592,7 @@ void main(){
     		case '1': 
     				printf("\nBan chon Dang Nhap");
     				t = login();
-    			    //if(t == 1) menu(sockfd);
+    			    if(t == 1) menu();
     			    
     			    break;
     		case '2': 	
@@ -595,13 +602,11 @@ void main(){
     			    
     			    break;
     		case '3':
+    			close(currentSockFD);
     			return;
     		default : break;
     			
 
     	}
     }
-
-
-
 }
