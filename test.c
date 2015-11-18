@@ -3,15 +3,19 @@
 #include "request.h"
 #define LEN 204 
 
-char* check_whitespace (char *str)
-{
-  char key[] = { ' ', '\n', '\t', 0 };
-  return strpbrk (str, key);
+typedef struct User {
+	int offline;
+	char name[100];
+}User;
+
+void setData(User *user) {
+	user->offline = 10;
+	strcpy(user->name, "Truong");
 }
 
 int main() {
-	char buff[10][19];
+	User user;
 
-
-	printf("%d\n", sizeof(buff));
+	setData(&user);
+	printf("%s\n", user.name);
 }

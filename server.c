@@ -8,8 +8,8 @@
 #define MIN_LENGTH_USERNAME 6
 #define MAX_LENGTH_PASSWORD 15
 #define MIN_LENGTH_PASSWORD 6
-#define SIZE_BLOCK_REQUEST 1000
-#define SIZE_BLOCK_RESPOND 1000
+#define SIZE_BLOCK_REQUEST 204
+#define SIZE_BLOCK_RESPOND 204
 
 char key[] = { ' ', '\n', '\t', 0 };
 #define OPEN_MAX  50
@@ -23,6 +23,14 @@ User userRegisted[OPEN_MAX];
 
 void setCurrentSockFD(int sockFD) {
 	currentSockFD = sockFD;
+}
+
+void setOnline(User* user) {
+	user->isOnline = TRUE;
+}
+
+void setOffline(User* user) {
+	user->isOnline = FALSE;
 }
 
 int initConnect(const int PORT) {
@@ -149,12 +157,11 @@ void handleLoginRequest(LoginRequest loginRequest) {
 		return;
 	}
 
-	userRegisted[userIndex].isOnline=TRUE;
+	setOnline(&userRegisted[userIndex]);
 	userRegisted[userIndex].sockFD = currentSockFD;
 	printf("Client %s login success\n", user.userName);
 	sendLoginRespond(LOGIN_SUCCESS, "Login success");
 }
-
 
 void handleLogoutRequest(LogoutRequest logoutRequest) {
 
@@ -214,7 +221,7 @@ void handleRegisterRequest(RegisterRequest registerRequest) {
 
 	sendRegisterRespond(REGISTER_SUCCESS, "Register success");
 	//update status
-	user.isOnline = FALSE;
+	setOffline(&user);
 	user.sockFD = -1;
 	numUserRegisted =  addUser(user, userRegisted, numUserRegisted);
 
@@ -228,25 +235,27 @@ void handleChatWithFriendRequest(ChatRequest chatRequest) {
 
 void sendGetOnlineUserListRespond() {
 	GetOnlineUserListRespond getOnlineUserListRespond;
-	int i = 0, numUsersOnline = 0;
-	char onlineUserList[10][20];
+	int i = 0;
+	//char onlineUserList[10][20];
 
+	getOnlineUserListRespond.numUsersOnline = 0;
 	getOnlineUserListRespond.typeRespond = GET_ONLINE_USER_LIST_RESPOND;
 	
 	for (i = 0; i < numUserRegisted; ++i) {
 		if (userRegisted[i].isOnline) {
-			strcpy(onlineUserList[numUsersOnline], userRegisted[i].userName);
-			++numUsersOnline;
-			if (numUsersOnline == 10) {
-				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 200);
+			if(userRegisted[i].sockFD==currentSockFD) continue;
+			strcpy(getOnlineUserListRespond.onlineUserList[getOnlineUserListRespond.numUsersOnline], userRegisted[i].userName);
+			getOnlineUserListRespond.numUsersOnline++;
+			if (getOnlineUserListRespond.numUsersOnline == 10) {
+				//memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 200);
 				sendRespond(&getOnlineUserListRespond);
-				numUsersOnline = 0;
+				getOnlineUserListRespond.numUsersOnline = 0;
 			}
 		}
 	}
 	//
 
-	memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
+	//memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
 	sendRespond(&getOnlineUserListRespond);
 }
 
@@ -307,7 +316,7 @@ int main() {
 
 	numUserRegisted = readUsersFile("data.txt");
 	for (i = 0; i < numUserRegisted; ++i) {
-		userRegisted[i].isOnline = FALSE;
+		setOffline(&userRegisted[i]);
 	}
 
 	listenFD = initConnect(PORT);
