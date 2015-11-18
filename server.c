@@ -236,26 +236,29 @@ void handleChatWithFriendRequest(ChatRequest chatRequest) {
 void sendGetOnlineUserListRespond() {
 	GetOnlineUserListRespond getOnlineUserListRespond;
 	int i = 0;
-	//char onlineUserList[10][20];
+	char onlineUserList[10][19];
+	int numUsersOnline = 0;
 
 	getOnlineUserListRespond.numUsersOnline = 0;
 	getOnlineUserListRespond.typeRespond = GET_ONLINE_USER_LIST_RESPOND;
 	
 	for (i = 0; i < numUserRegisted; ++i) {
+		if(userRegisted[i].sockFD == currentSockFD) 
+			continue;
 		if (userRegisted[i].isOnline) {
-			if(userRegisted[i].sockFD==currentSockFD) continue;
-			strcpy(getOnlineUserListRespond.onlineUserList[getOnlineUserListRespond.numUsersOnline], userRegisted[i].userName);
-			getOnlineUserListRespond.numUsersOnline++;
+			strcpy(onlineUserList[numUsersOnline], userRegisted[i].userName);
+			++numUsersOnline;
 			if (getOnlineUserListRespond.numUsersOnline == 10) {
-				//memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 200);
+				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
+				getOnlineUserListRespond.numUsersOnline = numUsersOnline;
 				sendRespond(&getOnlineUserListRespond);
-				getOnlineUserListRespond.numUsersOnline = 0;
+				numUsersOnline = 0;
 			}
 		}
 	}
-	//
 
-	//memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
+	memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
+	getOnlineUserListRespond.numUsersOnline = numUsersOnline;
 	sendRespond(&getOnlineUserListRespond);
 }
 
