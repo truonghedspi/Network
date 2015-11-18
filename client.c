@@ -489,11 +489,23 @@ int chatting(){
 
 	}
 }
+
+void main_menu() {
+			printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
+			printf("\n1.Chon user dang online de chat");
+			printf("\n2.Tao phong chat");
+			printf("\n3.Moi ban vao phong chat");
+			printf("\n4.Thoat");
+			printf("\nSelect: ");
+}
+
+
 void menu(){
 
 	char choose[2];
 	int max_user_list;
 	int rv,t,x;
+	int size_recv;
 	char mesg[LEN];
 	fd_set readSet;
 	struct timeval tv;
@@ -507,23 +519,28 @@ void menu(){
 		printf("\n3.Moi ban vao phong chat");
 		printf("\n4.Thoat");
 		printf("\nBan chon: ");*/
+
+		main_menu();
+
 		while(1){
-			tv.tv_sec = 1;
+			tv.tv_sec = 0;
 			tv.tv_usec =0;
 			FD_SET(currentSockFD, &readSet);
 			FD_SET(fileno(stdin), &readSet);
-			printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
-			printf("\n1.Chon user dang online de chat");
-			printf("\n2.Tao phong chat");
-			printf("\n3.Moi ban vao phong chat");
-			printf("\n4.Thoat");
-			printf("\n");
-			select(currentSockFD +1, &readSet, NULL, NULL, NULL);
+			
+			select(currentSockFD +1, &readSet, NULL, NULL, &tv);
 			if(FD_ISSET(currentSockFD, &readSet)){
 				strcpy(mesg,"");
-				if(recv(currentSockFD,mesg,LEN,0)){
+				size_recv = recv(currentSockFD,mesg,LEN,0);
+				if(size_recv == 0){
+					printf("Server disconnect\n");
 					close(currentSockFD);
-					return ;
+					exit(0);
+				}
+				if (size_recv < 0) {
+					printf("Error\n");
+					close(currentSockFD);
+					exit(0);
 				}
 				respond=(*(Respond*)mesg);
 				if(check_type(respond) == CHAT_ROOM_RESPOND){
@@ -536,8 +553,8 @@ void menu(){
 					choose_user(mesg);
 					chatting();
 				}
-			}else if (FD_ISSET(fileno(stdin), &readSet)){
-				
+			}
+			 if (FD_ISSET(fileno(stdin), &readSet)){	
 				fgets(choose,3,stdin);
 				switch(choose[0]){
 		    		case '1' :
