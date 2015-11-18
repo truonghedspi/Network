@@ -3,10 +3,18 @@
 #include "request.h"
 #define LEN 204 
 
-typedef struct User {
+typedef struct {
 	int offline;
 	char name[100];
 }User;
+
+User user;	
+
+int set() {
+	strcpy(user.name, "Truong");
+	printf("%s\n",user.name );
+	return 1;
+}
 
 void setData(User *user) {
 	user->offline = 10;
@@ -14,8 +22,10 @@ void setData(User *user) {
 }
 
 int main() {
-	User user;
+	
 
-	setData(&user);
-	printf("%s\n", user.name);
+	printf("1%s\n", user.name);
+	strcpy(user.name,"aaa");
+	set();
+	printf("2%s\n", user.name);
 }

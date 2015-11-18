@@ -18,6 +18,8 @@
 
 int currentSockFD = -1;
 
+int num_user_online = 0;
+
 typedef enum{
 	USER,
 	ROOM
@@ -29,7 +31,6 @@ typedef struct{
 }User_List;
 User_List chatList[100];
 User_List userList[100];
-
 
 int check_input(char buff[]){
 	if(strlen(buff)<6 || strlen(buff)>=15) return 0;
@@ -321,17 +322,28 @@ int clear_user_list(){
 
 int take_user_list(GetOnlineUserListRespond userListRespond){
 	int i=0,y=0;
+	char buff[20];
 	
 	for(i=0;i<userListRespond.numUsersOnline;i++){
-		y=0;
-		while(strcmp(userList[y].userName,"") != 0){
-			if(strcmp(userListRespond.onlineUserList[i],userList[y].userName) == 0) goto L1;
-			y++;
+		for (y = 0; y < num_user_online; ++y) {
+			if (strcmp(userListRespond.onlineUserList[i], userList[y].userName) == 0) {
+				break;
+			}
 		}
-		strcpy(userList[y].userName,userListRespond.onlineUserList[i]);
-		L1: ;
+
+		//neu co thang turng thi y : 0 ~ num_user_oline -1
+		//neu khong co thang nao: y == num_user_online
+		if(y == num_user_online) {
+			strcpy(buff, userListRespond.onlineUserList[i]);
+			strcpy(userList[y].userName, buff);
+			++num_user_online;
+		}
 	}
-	return y+1;
+
+	for (i = 0; i < num_user_online; ++i) {
+			puts(userList[i].userName);
+	}
+	return num_user_online;
 }
 //gui yeu cau lay danh sach user online
 void online_user_list_request(){
@@ -346,8 +358,7 @@ void online_user_list_request(){
 
 //chon user de chat
 int choose_user(char mesg[]){
-	int i,t,y,TOTAL_USER;
-	User_List userList[100];
+	int i,y;
 	char buff[LEN],buff3[LEN];
 	GetOnlineUserListRespond 	userListRespond;
 	ChatRequest chatRequest;
@@ -359,22 +370,29 @@ int choose_user(char mesg[]){
 		return 0;
 	}else if(userListRespond.numUsersOnline >0 ){
 		printf("\nCO %d User online",userListRespond.numUsersOnline);
-		printf("UESR%s\n",userListRespond.onlineUserList[1] );
-		TOTAL_USER=take_user_list(userListRespond);
-		for ( i = 0; i < TOTAL_USER; i++){
-			printf("\n%d.@%s",i+1,userList[i].userName);
+		//printf("UESR%s\n",userListRespond.onlineUserList[1] );
+		take_user_list(userListRespond);
+		for (i = 0; i < num_user_online; ++i) {
+			puts(userList[i].userName);
+		}
+		for ( i = 0; i < num_user_online; i++){
+			printf("\n%d.%s",i+1,userList[i].userName);
 		}
 		while(1){
 			printf("\nChon user de chat: ");
 			scanf("%d",&y);
 			fgets(buff3,LEN,stdin);
-			if(0<y&&y<=TOTAL_USER) break;
+			if(0<=y&&y<=num_user_online) break;
 		}
-		chatRequest.typeRequest=CHAT_REQUEST;
-		chatRequest.chatType=ASK_CHAT;
-		strcpy(chatRequest.userName,userList[y-1].userName);
-		memcpy(mesg,&chatRequest,204);
-		send(currentSockFD,mesg,204,0);
+		if(y==0){
+			return 0;
+		}else{
+			chatRequest.typeRequest=CHAT_REQUEST;
+			chatRequest.chatType=ASK_CHAT;
+			strcpy(chatRequest.userName,userList[y-1].userName);
+			memcpy(mesg,&chatRequest,204);
+			send(currentSockFD,mesg,204,0);
+		}
 	}	
 }
 
