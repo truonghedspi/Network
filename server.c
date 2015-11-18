@@ -251,10 +251,10 @@ void sendGetOnlineUserListRespond() {
 			if (numUsersOnline == 10) {
 				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
 				getOnlineUserListRespond.numUsersOnline = numUsersOnline;
-				printf("user online: \n");
-				for (int j = 0; j < numUsersOnline; ++j) {
-					printf("%s\n", getOnlineUserListRespond.onlineUserList[j]);
-				}
+				if(i==(numUserRegisted-1)){
+					getOnlineUserListRespond.getListRespondResult=END;
+				}else 
+					getOnlineUserListRespond.getListRespondResult=CONT;
 				sendRespond(&getOnlineUserListRespond);
 				numUsersOnline = 0;
 			}
@@ -263,10 +263,7 @@ void sendGetOnlineUserListRespond() {
 
 	memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
 	getOnlineUserListRespond.numUsersOnline = numUsersOnline;
-	printf("user online: \n");
-				for (int j = 0; j < numUsersOnline; ++j) {
-					printf("%s\n", getOnlineUserListRespond.onlineUserList[j]);
-				}
+	getOnlineUserListRespond.getListRespondResult=END;
 	sendRespond(&getOnlineUserListRespond);
 }
 

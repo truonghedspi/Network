@@ -59,12 +59,16 @@ typedef struct _RegisterRespond {
 	char messenger[196];
 }RegisterRespond;
 
+typedef enum {
+	END,CONT
+}GetListRespondResult;
 
 typedef struct _GetOnlineUserListRespond {
 	RespondType typeRespond;
 	int numUsersOnline;
+	GetListRespondResult getListRespondResult;
 	char onlineUserList[10][19];
-	char data[6];
+	char data[2];
 }GetOnlineUserListRespond;
 
 
