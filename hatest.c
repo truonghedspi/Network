@@ -1,18 +1,18 @@
-#include <stdio.h>
-#include "respond.h"
-#include "request.h"
-#define LEN 204 
+
+#include <string.h>
+ #include <stdio.h>
 
 
-void main(){
-	int so;
-	char buff[LEN];
 
-	printf("\nNhap 1 cai j do: ");
-	scanf("%d",&so);
-	fgets(buff,LEN,stdin);
-	printf("%d-%s\n",so,buff );
-	so--;
-	printf("%d\n",so );
-	printf("\ndo dai: %d",strlen(buff));
-}
+
+
+ /* Let's test it out */
+ int main(void) {
+ char pass[15];
+
+ printf("Nhap pass: ");
+ get_pass(pass);
+ printf("\nPass la: %s: ", pass);
+ printf("\nCo do dai %d: ",strlen(pass));
+ return 0;
+ } 
