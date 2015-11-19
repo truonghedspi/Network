@@ -10,6 +10,7 @@ typedef enum {
 	LOGIN_RESPOND,
 	LOGOUT_RESPOND,
 	REGISTER_RESPOND,
+	NOTIFICATION_RESPOND,
 	CHAT_RESPOND,
 	CHAT_ROOM_RESPOND,
 	GET_ONLINE_USER_LIST_RESPOND
@@ -60,7 +61,8 @@ typedef struct _RegisterRespond {
 }RegisterRespond;
 
 typedef enum {
-	END,CONT
+	END,
+	CONT
 }GetListRespondResult;
 
 typedef struct _GetOnlineUserListRespond {
@@ -71,6 +73,17 @@ typedef struct _GetOnlineUserListRespond {
 	char data[2];
 }GetOnlineUserListRespond;
 
+typedef enum {
+	ON,
+	OFF
+}NotifType;
+
+typedef struct _NotificationRespond {
+	RespondType typeRespond;
+	NotifType notifType;
+	char userName[50];
+	char data[146];
+}NotificationRespond;
 
 typedef struct _ChatRespond {
 	RespondType typeRespond;

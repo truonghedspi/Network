@@ -17,9 +17,8 @@
 
 
 int currentSockFD = -1;
-
-int num_user_online = 0;
-int num_chat_user = 0;
+int numUsersOnline = 0;
+char currenUserName[LEN];
 
 typedef enum{
 	USER,
@@ -53,6 +52,15 @@ int check_type(Respond respond){
 	return respond.typeRespond;
 }
 
+int check_currUserName(){
+	int i;
+	for( i=0;i<numUsersOnline;i++){
+		if(strcmp(userList[i].userName,currenUserName)==0)
+			return 1;
+	}
+	return 0;
+}
+
 //phan biet loai chat voi user
 void type_chat_respond(char buff[]){
 
@@ -60,23 +68,12 @@ void type_chat_respond(char buff[]){
 
 	chatRespond=(*(ChatRespond*)buff);
 	switch(chatRespond.chatType){
-		/*case ASK_CHAT:
-			answer_ask_chat(chatRespond);
-			break;*/
 		case QUIT_CHAT:
 			del_partner(chatRespond.userName);
 			break;
 		case CHAT:
 			printf("\n@%s: %s",chatRespond.userName,chatRespond.messenger);
-			break;
-		case YES:
-			printf("\n@%s dong y chat!!",chatRespond.userName);
-			add_partner(chatRespond.userName,USER);
-			break;
-		case NO:
-			printf("\n@%s khong dong y chat!!",chatRespond.userName);
-			break;
-		
+			break;		
 	}
 }
 
@@ -119,9 +116,12 @@ void check_respond(char mesg[]){
 			
 			break;
 		case GET_ONLINE_USER_LIST_RESPOND:
-			printf("\nCHAT_ROOM_RESPOND");
+			printf("\nCHAT_RESPOND");
 			t=take_user_list(mesg);
-			if(t == 1) choose_user();
+			if(t == 1) {
+				choose_user();
+				chatting();
+			}
 			else if(t == 0) printf("\nDang nhan danh sach...");
 			else if(t == 2) printf("\nKhong co user khac dang online!");
 			printf("\n");
@@ -131,33 +131,38 @@ void check_respond(char mesg[]){
 }
 
 //them doi tuong vao danh sach chatList
-int add_partner(char userName[],TypeChatList type){
+int add_partner(char userName[]){
 	int i=0;
-	while(strcmp(chatList[i].userName,"") != 0 ){
-		i++;
-	}
-	strcpy(chatList[i].userName,userName);
-	chatList[i].type=type;
-	return i+1;
+
+	strcpy(userList[numUsersOnline].userName,userName);
+	numUsersOnline++;
+	//chatList[i].type=type;
+	return 1;
 }
 
 //xoa doi tuong khoi danh sach chatList
 int del_partner(char userName[]){
 	int i=0;
-	while(1){
-		if(strcmp(userName,chatList[i].userName)==0)
+
+	for(i=0;i<numUsersOnline;i++){
+		if(strcmp(userList[i].userName,userName)==0){
 			break;
-		i++;
+		}
 	}
-	while(1){
-		if(strcmp(chatList[i+1].userName,"")==0)
-			break;
-		strcpy(chatList[i].userName,chatList[i+1].userName);
-		chatList[i].type = chatList[i+1].type;
-		i++;
-	}
-	strcpy(chatList[i].userName,"");
-	return i;
+	if(i<numUsersOnline){
+		while(1){
+			if(i == numUsersOnline)
+				break;
+			strcpy(chatList[i].userName,chatList[i+1].userName);
+			chatList[i].type = chatList[i+1].type;
+			i++;
+		}
+		strcpy(chatList[i].userName,"");
+		numUsersOnline--;
+		return 1;
+	}else if(i==numUsersOnline)
+		printf("\ndel_partner ERROR" );
+		return 0;
 }
 
 int login(){
@@ -311,14 +316,11 @@ int log_out(){
 }
 
 int creat_room(){
-
 }
+
 //tra loi yeu cau moi vao nhom Chat
 int answer_invite_room(){
-
 }
-
-
 
 int clear_user_list(){
 	int i;
@@ -333,20 +335,18 @@ int take_user_list(char mesg[]){
 	GetOnlineUserListRespond userListRespond;
 	
 	userListRespond=(*(GetOnlineUserListRespond*)mesg);
-	printf("%d\n",userListRespond.numUsersOnline );
-	printf("%d\n", userListRespond.getListRespondResult);
 	for(i=0;i<userListRespond.numUsersOnline;i++){
-		for (y = 0; y < num_user_online; ++y) {
+		for (y = 0; y < numUsersOnline; ++y) {
 			if (strcmp(userListRespond.onlineUserList[i], userList[y].userName) == 0) {
 				break;
 			}
 		}
-		if(y == num_user_online) {
+		if(y == numUsersOnline) {
 			strcpy(userList[y].userName, userListRespond.onlineUserList[i]);
-			++num_user_online;
+			++numUsersOnline;
 		}
 	}
-	if(num_user_online == 0) return 2;
+	if(numUsersOnline == 0) return 2;
 	if(userListRespond.getListRespondResult == END) return 1;
 	if(userListRespond.getListRespondResult == CONT) return 0;
 }
@@ -365,171 +365,70 @@ void online_user_list_request(){
 //chon user de chat
 int choose_user(){
 	int i,y;
-	char buff[LEN],buff3[LEN];
-	GetOnlineUserListRespond 	userListRespond;
-	ChatRequest chatRequest;
-
-
-	//userListRespond=(*(GetOnlineUserListRespond*)mesg);
-	if(num_user_online == 0){
-		printf("\nKhong co user nao online!!");
+	
+	printf("\nCo %d User online",numUsersOnline);
+	for ( i = 0; i < numUsersOnline; i++){
+		printf("\n%d.%s",i+1,userList[i].userName);
+	}
+	printf("\n0.Exit");
+	printf("");
+	while(1){
+		y=wait_int();
+		if(0<=y&&y<=numUsersOnline) break;
+	}
+	if(y==0){
 		return 0;
-	}else if(num_user_online >0 ){
-		printf("\nCO %d User online",userListRespond.numUsersOnline);
-		//take_user_list(userListRespond);
-		for ( i = 0; i < num_user_online; i++){
-			printf("\n%d.%s",i+1,userList[i].userName);
-		}
-		printf("\n0.Exit");
-		/*while(1){
-			printf("\nChon user de chat: ");
-			scanf("%d",&y);
-			fgets(buff3,LEN,stdin);
-			if(0<=y&&y<=num_user_online) break;
-		}*/
-		while(1){
-			wait(buff);
-			y=atoi(buff[0]);
-			if(0<=y&&y<=num_user_online) break;
-		}
-		if(y==0){
-			return 0;
-		}else{
-			add_partner(userList[y-1].userName,USER);
-			printf("\nDa them user %s vao chatList",userList[y-1].userName);
-			//chatting();
-			/*chatRequest.typeRequest=CHAT_REQUEST;
-			chatRequest.chatType=ASK_CHAT;
-			strcpy(chatRequest.userName,userList[y-1].userName);
-			memcpy(mesg,&chatRequest,204);
-			send(currentSockFD,mesg,204,0);*/
-		}
+	}else{
+		strcpy(currenUserName,userList[y-1].userName);
+		printf("\nBan dang chat voi @%s",userList[y-1].userName);
 	}	
 }
 
 //gui noi dung Chat
-int send_chat(char userName[],char buff[],ChatType type){
+int send_chat(char buff[],ChatType type){
 	ChatRequest chatRequest;
+	int t;
 	char mesg[LEN];
 
-	chatRequest.typeRequest=CHAT_REQUEST;
-	chatRequest.chatType=type;
-	strcpy(chatRequest.userName,userName);
-	strcpy(chatRequest.messenger,buff);
-	memcpy(mesg,&chatRequest,204);
-	send(currentSockFD,mesg,204,0);
+	t=check_currUserName();
+	if(t==1){
+		chatRequest.typeRequest=CHAT_REQUEST;
+		chatRequest.chatType=type;
+		strcpy(chatRequest.userName,currenUserName);
+		strcpy(chatRequest.messenger,buff);
+		memcpy(mesg,&chatRequest,204);
+		send(currentSockFD,mesg,204,0);
+		return 1;
+	}else if(t==0){
+		printf("\nCurrenUserName NULL");
+		return 0;
+	}
 }
 
 int chatting(){
-	int TOTAL_USER=0,i,y;
-	char buff[LEN],mesg[LEN],buff3[LEN];
-	Respond respond;
-	ChatRequest chatRequest;
-	fd_set readSet;
-	struct timeval tv;
+	char buff[LEN];
 
+	printf("\nBan dang chat voi @%s",currenUserName);
+	do{
+		wait_char(buff);
+		if(strcmp(buff,"\\q")==0 || strcmp(buff,"\\Q")==0){
 
-	while(strcmp(chatList[TOTAL_USER].userName,"") != 0){
-		TOTAL_USER++;
-	}
+		}else
+		if(strcmp(buff,"\\r")==0 || strcmp(buff,"\\R")==0){
 
-	while(1){
-		tv.tv_sec = 0;
-		tv.tv_usec =10000;
-		FD_SET(currentSockFD, &readSet);
-		FD_SET(fileno(stdin), &readSet);
-		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
+		}else
+		if(strcpy(buff,"\\l")==0 || strcpy(buff,"\\L")==0){
 
-		if(TOTAL_USER > 0){
-			if (FD_ISSET(fileno(stdin), &readSet)){
-				while(1){
-					fgets(buff,LEN,stdin);
-					buff[strlen(buff)-1]='\0';
-					if(check_input2(buff) == 1) break;
-				}
-				if(TOTAL_USER == 1){
-					if(chatList[0].type == USER){
-						if(strcmp(buff,"\\m") == 0){
-							return 1;
-						}else if(strlen(buff)==1 && ((buff[0]=='q') || (buff[0]=='Q'))) {
-							send_chat(chatList[0].userName,"",QUIT_CHAT);
-							TOTAL_USER = del_partner(chatList[0].userName);
-						}else{
-							send_chat(chatList[0].userName,buff,CHAT);
-						}
-					}else if(chatList[0].type == ROOM){
-						if(strlen(buff)==1 && ((buff[0]=='q') || (buff[0]=='Q'))) {
-							send_chat(chatList[0].userName,"",OUT_ROOM);
-							TOTAL_USER = del_partner(chatList[0].userName);
-						}else{
-							send_chat(chatList[0].userName,buff,CHAT_ROOM);
-						}
-					}
-				}else if(TOTAL_USER > 1){
-					for ( i = 0; i < TOTAL_USER; i++){
-						if(chatList[i].type==1){
-							printf("\n%d.#%s",i+1,chatList[i].userName);
-						}else{
-							printf("\n%d.@%s",i+1,chatList[i].userName);
-						}
-					}
-					while(1){
-						printf("\nChon user de tra loi: ");
-						scanf("%d",&y);
-						fgets(buff3,LEN,stdin);
-						if(0<y&&y<=TOTAL_USER) break;
-					}
-					if(chatList[y].type == USER){
-						if(strcmp(buff,"\\m") == 0){
-							return 1;
-						}else if(strlen(buff)==1 && ((buff[0]=='q') || (buff[0]=='Q'))) {
-							send_chat(chatList[y].userName,"",QUIT_CHAT);
-							TOTAL_USER = del_partner(chatList[y].userName);
-						}else{
-							send_chat(chatList[y].userName,buff,CHAT);
-						}
-					}else if(chatList[y].type == ROOM){
-						if(strlen(buff)==1 && ((buff[0]=='q') || (buff[0]=='Q'))) {
-							send_chat(chatList[y].userName,"",OUT_ROOM);
-							TOTAL_USER = del_partner(chatList[y].userName);
-						}else{
-							send_chat(chatList[y].userName,buff,CHAT_ROOM);
-						}
-					}
+		}else
+		if(strcpy(buff,"\\h")==0 || strcpy(buff,"\\H")==0){
 
-				} 
-			}else if (FD_ISSET(currentSockFD, &readSet)){
-				strcpy(mesg,"");
-				recv(currentSockFD,mesg,LEN,0);
-				respond=(*(Respond*)mesg);
-				if(check_type(respond) == CHAT_ROOM_RESPOND){
-					type_chat_room_respond(mesg);
-				}else if(check_type(respond) == CHAT_RESPOND) {
-					type_chat_respond(mesg);
-				}else if (check_type(respond) == GET_ONLINE_USER_LIST_RESPOND){
-					choose_user(mesg);
-				}
-
-			}
-		}else {
-			printf("\nChat list rong");
-			return 0;
+		}else{
+			send_chat(buff,CHAT);
 		}
-
-	}
+	}while(1);
 }
 
-void main_menu() {
-			printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
-			printf("\n1.Chon user dang online de chat");
-			printf("\n2.Tao phong chat");
-			printf("\n3.Moi ban vao phong chat");
-			printf("\n4.Thoat");
-			printf("\nChon: ");
-			printf("\n");
-}
-
-int wait(char buff[LEN]){
+int wait_char(char buff[LEN]){
 	
 	int rv;
 	int size_recv;
@@ -564,35 +463,102 @@ int wait(char buff[LEN]){
 				check_respond(mesg);
 			}
 			if(--rv <= 0){
-                break;
+				//strcpy(buff,"");
+                continue;
             }
 		}
 		if (FD_ISSET(fileno(stdin), &readSet)){	
 			fgets(buff,LEN,stdin);
-			break;
+			buff[strlen(buff)-1]='\0';
+			return;
 		} 
 	}
 	//return buff;
 }
-void menu(){
+
+int wait_int(){
+	
 	char buff[LEN];
+	int n;
+	int rv;
+	int size_recv;
+	char mesg[LEN];
+	fd_set readSet;
+	struct timeval tv;
+	Respond respond;
+
+	strcpy(buff,"");
+	while(1){
+		tv.tv_sec = 0;
+		tv.tv_usec =0;
+		FD_SET(currentSockFD, &readSet);
+		FD_SET(fileno(stdin), &readSet);
+		
+		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
+		if(FD_ISSET(currentSockFD, &readSet)){
+			strcpy(mesg,"");
+			size_recv = recv(currentSockFD,mesg,LEN,0);
+			if(size_recv == 0){
+				printf("Server disconnect\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if (size_recv < 0) {
+				printf("Error\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if(size_recv > 0){
+				printf("\nCo data gui ve");
+				check_respond(mesg);
+			}
+			if(--rv <= 0){
+				//n=-1;
+                continue;
+            }
+		}
+		if (FD_ISSET(fileno(stdin), &readSet)){	
+			scanf("%d",&n);
+			fgets(buff,LEN,stdin);
+			return n;
+		} 
+	}	
+}
+
+void main_menu() {
+			printf("\n***DOI 1 USER KHAC HOAC CHON CAC MUC DUOI DAY***\n");
+			printf("\n1.Chon user dang online de chat");
+			printf("\n2.Tao phong chat");
+			printf("\n3.Moi ban vao phong chat");
+			printf("\n4.Thoat");
+			printf("\nChon: ");
+			printf("\n");
+}
+
+void menu(){
+	//char buff[LEN];
+	int choose;
 
 	main_menu();
-	wait(buff);
-	switch(buff[0]){
-		case '1' :
-			printf("\nBan chon 1");
+	choose=wait_int();
+
+	switch(choose){
+		case 1 :
+			printf("\nBan da chon 1");
 			clear_user_list();
 			online_user_list_request();
 			break;
-		case '2' :
+		case 2 :
+			printf("\nBan da chon 2");
 			//creat_room(chatList);
 			//chat
 			break;
-		case '3' :
+		case 3 :
+			printf("\nBan da chon 3");
 			//invite_user_into_room(chatList) 
 			break ;
-		case '4' :
+		case 4 :
+			printf("\nBan da chon 4");
 			log_out();
 			return;
 		default :
@@ -634,7 +600,7 @@ void main(){
     			    if(t == 1) {
     			    	menu();
         			    do{
-    						wait(buff);	
+    						wait_char(buff);	
     					} while (1);
     				}
    					break;
@@ -653,28 +619,3 @@ void main(){
     	}
     }
 }
-//tra loi yeu cau moi Chat
-/*int answer_ask_chat(ChatRespond chatRespond){
-	int i;
-	char mesg[LEN];
-	char yes[2];
-	ChatRequest chatRequest;
-	
-	printf("\n@%s muon chat voi ban!!",chatRespond.userName);
-	printf("\nBan co dong y(y/n): ");
-	fgets(yes,3,stdin);
-	if(yes[0] == 'y' || yes[0] == 'Y') {
-		add_partner(chatRespond.userName,USER);
-		chatRequest.typeRequest=CHAT_REQUEST;
-		chatRequest.chatType=YES;
-		strcpy(chatRequest.userName,chatRespond.userName);
-		memcpy(mesg,&chatRequest,204);
-		send(currentSockFD,mesg,204,0);
-	}else {
-		chatRequest.typeRequest=CHAT_REQUEST;
-		chatRequest.chatType=NO;
-		strcpy(chatRequest.userName,chatRespond.userName);
-		memcpy(mesg,&chatRequest,204);
-		send(currentSockFD,mesg,204,0);
-	}
-}*/
