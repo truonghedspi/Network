@@ -1,7 +1,3 @@
-
-#include "input.h"
-#include "request.h"
-#include "respond.h"
 #include "my_socket.h"
 
 #define MAX_LENGTH_USERNAME 15
@@ -12,6 +8,7 @@
 #define SIZE_BLOCK_RESPOND 204
 
 char key[] = { ' ', '\n', '\t', 0 };
+
 #define OPEN_MAX  50
 #define MAX_USER  10
 #define BACKLOG  50
@@ -25,12 +22,36 @@ void setCurrentSockFD(int sockFD) {
 	currentSockFD = sockFD;
 }
 
+void handleClientDisconnect(int sockFD) {
+	int userIndex = -1;
+
+	userIndex = findUserIndexWithSockFD(sockFD);
+	if (userIndex < 0 || userIndex >= numUserRegisted)
+		return;
+	setOffline(&userRegisted[userIndex]);
+	close(sockFD);
+}
+
 void setOnline(User* user) {
-	user->isOnline = TRUE;
+	user->status = ONLINE;
+	notifyOnlineAll(user->userName);
 }
 
 void setOffline(User* user) {
-	user->isOnline = FALSE;
+	user->status = OFFLINE;
+	notifyOfflineAll(user->userName);
+}
+
+void notifyOnlineAll(char* userName) {
+	int i = 0;
+	UserChangeStatusRespond changeStatusRespond;
+
+	changeStatusRespond.typeRespond = USER_CHANGE_STATUS_RESPOND;
+	changeStatusRespond.userStatus = ONLINE;
+}
+
+void notifyOfflineAll(char* userName) {
+
 }
 
 int initConnect(const int PORT) {
@@ -98,6 +119,17 @@ void writeUsersFile(char *fileName, User user) {
 	fclose(f);
 }
 
+int findUserIndexWithSockFD(int sockFD) {
+	int i = 0;
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (userRegisted[i].sockFD == sockFD)
+			return i;
+	}
+
+	return -1;
+}
+
 int findUserIndex(User user, User* userRegisted, int numUserRegisted) {
 	int i = 0;
 
@@ -152,7 +184,7 @@ void handleLoginRequest(LoginRequest loginRequest) {
 		sendLoginRespond(LOGIN_INVALID_PASSWORD, "Password invalid!");
 		return;
 	}
-	 if (userRegisted[userIndex].isOnline == TRUE) {
+	 if (userRegisted[userIndex].status == ONLINE) {
 		sendLoginRespond(LOGIN_ONLINING, "User is onlining!");
 		return;
 	}
@@ -245,12 +277,16 @@ void sendGetOnlineUserListRespond() {
 	for (i = 0; i < numUserRegisted; ++i) {
 		if(userRegisted[i].sockFD == currentSockFD) 
 			continue;
-		if (userRegisted[i].isOnline) {
+		if (userRegisted[i].status == ONLINE) {
 			strcpy(onlineUserList[numUsersOnline], userRegisted[i].userName);
 			++numUsersOnline;
-			if (getOnlineUserListRespond.numUsersOnline == 10) {
+			if (numUsersOnline == 10) {
 				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
 				getOnlineUserListRespond.numUsersOnline = numUsersOnline;
+				printf("user online: \n");
+				for (int j = 0; j < numUsersOnline; ++j) {
+					printf("%s\n", getOnlineUserListRespond.onlineUserList[j]);
+				}
 				sendRespond(&getOnlineUserListRespond);
 				numUsersOnline = 0;
 			}
@@ -259,6 +295,10 @@ void sendGetOnlineUserListRespond() {
 
 	memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
 	getOnlineUserListRespond.numUsersOnline = numUsersOnline;
+	printf("user online: \n");
+				for (int j = 0; j < numUsersOnline; ++j) {
+					printf("%s\n", getOnlineUserListRespond.onlineUserList[j]);
+				}
 	sendRespond(&getOnlineUserListRespond);
 }
 
@@ -316,6 +356,7 @@ int main() {
 	int nReady, i,  size;
 	struct sockaddr_in  clientAddr;
 	char buff[sizeof(Request)+1];
+	int userIndex = -1;
 
 	numUserRegisted = readUsersFile("data.txt");
 	for (i = 0; i < numUserRegisted; ++i) {
@@ -370,7 +411,7 @@ int main() {
 					buff[size]='\0';
 					if (size < 0) {
 						if (errno == ECONNRESET) {
-                      		close(currentSockFD);
+                      		handleClientDisconnect(currentSockFD);
 							clients[i].fd = -1;
 
                    		} else {
@@ -379,7 +420,7 @@ int main() {
                    		}
                         	 
 					} else if (size == 0) {
-						close(currentSockFD);
+						handleClientDisconnect(currentSockFD);
 						clients[i].fd = -1;
 					} else {
 						printf("recognizeRequest\n");

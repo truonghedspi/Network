@@ -5,6 +5,7 @@
 #include "input.h"
 #include "request.h"
 #include "respond.h"
+
 #include <sys/types.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -17,15 +18,11 @@
 #include <signal.h>
 #include <poll.h>
 
-typedef enum {
-	ONLINE,
-	OFFLINE
-}UserStatus;
 
 typedef struct _User {
 	char userName[20];
 	char password[20];
-	UserStatus isOnline;
+	UserStatus status;
 	int sockFD;
 }User;
 

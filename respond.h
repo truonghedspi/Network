@@ -12,8 +12,10 @@ typedef enum {
 	REGISTER_RESPOND,
 	CHAT_RESPOND,
 	CHAT_ROOM_RESPOND,
-	GET_ONLINE_USER_LIST_RESPOND
+	GET_ONLINE_USER_LIST_RESPOND,
+	USER_CHANGE_STATUS_RESPOND
 }RespondType;
+
 
 typedef struct _Respond{
 	RespondType typeRespond;
@@ -82,5 +84,18 @@ typedef struct _ChatRoomRespond {
 	char roomName[30];
 	char messenger[146];
 }ChatRoomRespond;
+
+//respond when user change status
+typedef enum {
+	ONLINE,
+	OFFLINE
+}UserStatus;
+
+typedef struct _UserChangeStatusRespond {
+	RespondType typeRespond;
+	UserStatus userStatus;
+	char userName[196];
+}UserChangeStatusRespond;
+
 
 #endif
