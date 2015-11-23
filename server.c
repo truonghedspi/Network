@@ -12,47 +12,12 @@ char key[] = { ' ', '\n', '\t', 0 };
 #define OPEN_MAX  50
 #define MAX_USER  10
 #define BACKLOG  50
+
 int currentSockFD = -1;
 int numUserRegisted = 0;
 struct pollfd clients[OPEN_MAX];
 int maxIndex;
 User userRegisted[OPEN_MAX];
-
-void setCurrentSockFD(int sockFD) {
-	currentSockFD = sockFD;
-}
-
-void handleClientDisconnect(int sockFD) {
-	int userIndex = -1;
-
-	userIndex = findUserIndexWithSockFD(sockFD);
-	if (userIndex < 0 || userIndex >= numUserRegisted)
-		return;
-	setOffline(&userRegisted[userIndex]);
-	close(sockFD);
-}
-
-void setOnline(User* user) {
-	user->status = ONLINE;
-	notifyOnlineAll(user->userName);
-}
-
-void setOffline(User* user) {
-	user->status = OFFLINE;
-	notifyOfflineAll(user->userName);
-}
-
-void notifyOnlineAll(char* userName) {
-	int i = 0;
-	UserChangeStatusRespond changeStatusRespond;
-
-	changeStatusRespond.typeRespond = USER_CHANGE_STATUS_RESPOND;
-	changeStatusRespond.userStatus = ONLINE;
-}
-
-void notifyOfflineAll(char* userName) {
-
-}
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -80,7 +45,31 @@ int initConnect(const int PORT) {
 	return sockFD;
 }
 
-//read, write file
+int findUserIndexWithSockFD(int sockFD) {
+	int i = 0;
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (userRegisted[i].sockFD == sockFD)
+			return i;
+	}
+
+	return -1;
+}
+
+int findUserIndex(User user, User* userRegisted, int numUserRegisted) {
+	int i = 0;
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (strcmp(user.userName, userRegisted[i].userName) == 0)
+			return i;
+	}
+	return -1;
+}
+
+void setCurrentSockFD(int sockFD) {
+	currentSockFD = sockFD;
+}
+
 int readUsersFile(char * fileName) {
 	FILE *f;
 	char userName[20],password[20];
@@ -119,27 +108,6 @@ void writeUsersFile(char *fileName, User user) {
 	fclose(f);
 }
 
-int findUserIndexWithSockFD(int sockFD) {
-	int i = 0;
-
-	for (i = 0; i < numUserRegisted; ++i) {
-		if (userRegisted[i].sockFD == sockFD)
-			return i;
-	}
-
-	return -1;
-}
-
-int findUserIndex(User user, User* userRegisted, int numUserRegisted) {
-	int i = 0;
-
-	for (i = 0; i < numUserRegisted; ++i) {
-		if (strcmp(user.userName, userRegisted[i].userName) == 0)
-			return i;
-	}
-	return -1;
-}
-
 void makeUser(User* user, char* userName, char * password) {
 	strcpy(user->userName, userName);
 	strcpy(user->password, password);
@@ -148,6 +116,46 @@ void makeUser(User* user, char* userName, char * password) {
 int sendRespond(void * respond) {
 	return send(currentSockFD, (char* )respond, SIZE_BLOCK_RESPOND, 0);
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
+void notifyChangeStatusAll(char* userName, UserStatus status) {
+	int i = 0;
+	UserChangeStatusRespond changeStatusRespond;
+
+	changeStatusRespond.typeRespond = USER_CHANGE_STATUS_RESPOND;
+	changeStatusRespond.userStatus = status;
+	strcpy(changeStatusRespond.userName,userName);
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (userRegisted[i].status == ONLINE) {
+			setCurrentSockFD(userRegisted[i].sockFD);
+			sendRespond(&changeStatusRespond);
+		}
+	}
+}
+
+void setOnline(User* user) {
+	user->status = ONLINE;
+	notifyChangeStatusAll(user->userName, ONLINE);
+}
+
+void setOffline(User* user) {
+	user->status = OFFLINE;
+	notifyChangeStatusAll(user->userName, OFFLINE);
+}
+
+//read, write file
+void handleClientDisconnect(int sockFD) {
+	int userIndex = -1;
+
+	userIndex = findUserIndexWithSockFD(sockFD);
+	if (userIndex < 0 || userIndex >= numUserRegisted)
+		return;
+	setOffline(&userRegisted[userIndex]);
+	close(sockFD);
+}
+
 
 int sendLoginRespond(LoginResult loginResult, char* messenger) {
 	LoginRespond loginRespond;
@@ -353,7 +361,6 @@ int main() {
 	int nReady, i,  size;
 	struct sockaddr_in  clientAddr;
 	char buff[sizeof(Request)+1];
-	int userIndex = -1;
 
 	numUserRegisted = readUsersFile("data.txt");
 	for (i = 0; i < numUserRegisted; ++i) {

@@ -75,18 +75,6 @@ typedef struct _GetOnlineUserListRespond {
 	char data[2];
 }GetOnlineUserListRespond;
 
-typedef enum {
-	ON,
-	OFF
-}NotifType;
-
-typedef struct _NotificationRespond {
-	RespondType typeRespond;
-	NotifType notifType;
-	char userName[50];
-	char data[146];
-}NotificationRespond;
-
 typedef struct _ChatRespond {
 	RespondType typeRespond;
 	ChatType chatType;
