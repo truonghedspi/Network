@@ -44,9 +44,12 @@ typedef struct _GetOnlineUserListRequest {
 }GetOnlineUserListRequest;
 
 typedef enum{
-	ASK_CHAT,QUIT_CHAT,
-	CHAT,YES,NO,CHAT_ROOM,
-	INVITE_ROOM,IN_ROOM,OUT_ROOM
+	QUIT_CHAT,
+	CHAT,
+	CHAT_ROOM,
+	INVITE_ROOM,
+	IN_ROOM,
+	OUT_ROOM
 }ChatType;
 
 typedef struct _ChatRequest {
