@@ -128,7 +128,7 @@ void notifyChangeStatusAll(char* userName, UserStatus status) {
 	strcpy(changeStatusRespond.userName,userName);
 
 	for (i = 0; i < numUserRegisted; ++i) {
-		if (userRegisted[i].status == ONLINE) {
+		if (userRegisted[i].status == ONLINE && strcmp(userRegisted[i].userName, userName) != 0) {
 			setCurrentSockFD(userRegisted[i].sockFD);
 			sendRespond(&changeStatusRespond);
 		}
