@@ -197,10 +197,11 @@ void handleLoginRequest(LoginRequest loginRequest) {
 		return;
 	}
 
-	setOnline(&userRegisted[userIndex]);
+	
 	userRegisted[userIndex].sockFD = currentSockFD;
 	printf("Client %s login success\n", user.userName);
 	sendLoginRespond(LOGIN_SUCCESS, "Login success");
+	setOnline(&userRegisted[userIndex]);
 }
 
 void handleLogoutRequest(LogoutRequest logoutRequest) {

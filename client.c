@@ -133,6 +133,18 @@ void type_chat_room_respond(char buff[]){
 	}
 }
 
+void notification(char buff[]){
+	UserChangeStatusRespond statusRespond;
+
+	statusRespond=(*(UserChangeStatusRespond*)buff);
+	if(statusRespond.userStatus==ONLINE){
+		printf("\n@%s vua online",statusRespond.userName);
+		add_partner(statusRespond.userName);
+	}else if(statusRespond.userStatus==OFFLINE){
+		printf("\n@%s vua offline",statusRespond.userName);
+		del_partner(statusRespond.userName);
+	}
+}
 void check_respond(char mesg[]){
 	Respond respond;
 	int t;
@@ -162,6 +174,9 @@ void check_respond(char mesg[]){
 			else if(t == 0) printf("\nRECEIVING LIST...");
 			else if(t == 2) printf("\nNO OTHER USER IS ONLINE!");
 			printf("\n");
+			break;
+		case USER_CHANGE_STATUS_RESPOND:
+			notification(mesg);
 			break;
 
 	}
