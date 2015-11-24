@@ -12,47 +12,12 @@ char key[] = { ' ', '\n', '\t', 0 };
 #define OPEN_MAX  50
 #define MAX_USER  10
 #define BACKLOG  50
+
 int currentSockFD = -1;
 int numUserRegisted = 0;
 struct pollfd clients[OPEN_MAX];
 int maxIndex;
 User userRegisted[OPEN_MAX];
-
-void setCurrentSockFD(int sockFD) {
-	currentSockFD = sockFD;
-}
-
-void handleClientDisconnect(int sockFD) {
-	int userIndex = -1;
-
-	userIndex = findUserIndexWithSockFD(sockFD);
-	if (userIndex < 0 || userIndex >= numUserRegisted)
-		return;
-	setOffline(&userRegisted[userIndex]);
-	close(sockFD);
-}
-
-void setOnline(User* user) {
-	user->status = ONLINE;
-	notifyOnlineAll(user->userName);
-}
-
-void setOffline(User* user) {
-	user->status = OFFLINE;
-	notifyOfflineAll(user->userName);
-}
-
-void notifyOnlineAll(char* userName) {
-	int i = 0;
-	UserChangeStatusRespond changeStatusRespond;
-
-	changeStatusRespond.typeRespond = USER_CHANGE_STATUS_RESPOND;
-	changeStatusRespond.userStatus = ONLINE;
-}
-
-void notifyOfflineAll(char* userName) {
-
-}
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -80,7 +45,31 @@ int initConnect(const int PORT) {
 	return sockFD;
 }
 
-//read, write file
+int findUserIndexWithSockFD(int sockFD) {
+	int i = 0;
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (userRegisted[i].sockFD == sockFD)
+			return i;
+	}
+
+	return -1;
+}
+
+int findUserIndex(User user, User* userRegisted, int numUserRegisted) {
+	int i = 0;
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (strcmp(user.userName, userRegisted[i].userName) == 0)
+			return i; 
+	}
+	return -1;
+}
+
+void setCurrentSockFD(int sockFD) {
+	currentSockFD = sockFD;
+}
+
 int readUsersFile(char * fileName) {
 	FILE *f;
 	char userName[20],password[20];
@@ -119,27 +108,6 @@ void writeUsersFile(char *fileName, User user) {
 	fclose(f);
 }
 
-int findUserIndexWithSockFD(int sockFD) {
-	int i = 0;
-
-	for (i = 0; i < numUserRegisted; ++i) {
-		if (userRegisted[i].sockFD == sockFD)
-			return i;
-	}
-
-	return -1;
-}
-
-int findUserIndex(User user, User* userRegisted, int numUserRegisted) {
-	int i = 0;
-
-	for (i = 0; i < numUserRegisted; ++i) {
-		if (strcmp(user.userName, userRegisted[i].userName) == 0)
-			return i;
-	}
-	return -1;
-}
-
 void makeUser(User* user, char* userName, char * password) {
 	strcpy(user->userName, userName);
 	strcpy(user->password, password);
@@ -147,56 +115,6 @@ void makeUser(User* user, char* userName, char * password) {
 
 int sendRespond(void * respond) {
 	return send(currentSockFD, (char* )respond, SIZE_BLOCK_RESPOND, 0);
-}
-
-int sendLoginRespond(LoginResult loginResult, char* messenger) {
-	LoginRespond loginRespond;
-
-	loginRespond.typeRespond = LOGIN_RESPOND;
-	loginRespond.loginResult = loginResult;
-	strcpy(loginRespond.messenger, messenger);
-
-	return sendRespond(&loginRespond);
-}
-
-int sendRegisterRespond(RegisterResult registerResult, char* messenger) {
-	RegisterRespond registerRespond;
-
-	registerRespond.typeRespond = REGISTER_RESPOND;
-	registerRespond.registerResult = registerResult;
-	strcpy(registerRespond.messenger, messenger);
-
-	return sendRespond(&registerRespond);
-}
-
-void handleLoginRequest(LoginRequest loginRequest) {
-	User user;
-	int userIndex = -1;
-
-	printf("User Login!\n");
-	makeUser(&user, loginRequest.userName, loginRequest.password);
-	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
-	if (userIndex < 0) {
-		sendLoginRespond(LOGIN_INVALID_USERNAME,"User name not found!");
-		return;
-	}
-	if (strcmp(user.password, userRegisted[userIndex].password) != 0) {
-		sendLoginRespond(LOGIN_INVALID_PASSWORD, "Password invalid!");
-		return;
-	}
-	 if (userRegisted[userIndex].status == ONLINE) {
-		sendLoginRespond(LOGIN_ONLINING, "User is onlining!");
-		return;
-	}
-
-	setOnline(&userRegisted[userIndex]);
-	userRegisted[userIndex].sockFD = currentSockFD;
-	printf("Client %s login success\n", user.userName);
-	sendLoginRespond(LOGIN_SUCCESS, "Login success");
-}
-
-void handleLogoutRequest(LogoutRequest logoutRequest) {
-
 }
 
 int checkValidPassword(char* password) {
@@ -218,6 +136,50 @@ int addUser(User user, User userRegisted[], int numUserRegisted) {
 	return ++numUserRegisted;
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
+
+//---------------------NOTIFY CHANGE STATUS------------------------------------------------
+void notifyChangeStatusAll(char* userName, UserStatus status) {
+	int i = 0;
+	UserChangeStatusRespond changeStatusRespond;
+
+	changeStatusRespond.typeRespond = USER_CHANGE_STATUS_RESPOND;
+	changeStatusRespond.userStatus = status;
+	strcpy(changeStatusRespond.userName,userName);
+
+	for (i = 0; i < numUserRegisted; ++i) {
+		if (userRegisted[i].status == ONLINE && strcmp(userRegisted[i].userName, userName) != 0) {
+			setCurrentSockFD(userRegisted[i].sockFD);
+			sendRespond(&changeStatusRespond);
+			printf("Send %s change status\n", userName);
+		}
+	}
+}
+
+void setOnline(User* user) {
+	user->status = ONLINE;
+	notifyChangeStatusAll(user->userName, ONLINE);
+}
+
+void setOffline(User* user) {
+	user->status = OFFLINE;
+	notifyChangeStatusAll(user->userName, OFFLINE);
+}
+
+//read, write file
+void handleClientDisconnect(int sockFD) {
+	int userIndex = -1;
+
+	userIndex = findUserIndexWithSockFD(sockFD);
+	if (userIndex < 0 || userIndex >= numUserRegisted)
+		return;
+	setOffline(&userRegisted[userIndex]);
+	close(sockFD);
+}
+//--------------------------------------------------------------------------
+
+//------------HANDLE REGISTER----------------------------------------------
 void handleRegisterRequest(RegisterRequest registerRequest) {
 	User user;
 	int userIndex = -1;
@@ -261,9 +223,98 @@ void handleRegisterRequest(RegisterRequest registerRequest) {
 	writeUsersFile("data.txt",user);
 }
 
-void handleChatWithFriendRequest(ChatRequest chatRequest) {
+int sendRegisterRespond(RegisterResult registerResult, char* messenger) {
+	RegisterRespond registerRespond;
 
+	registerRespond.typeRespond = REGISTER_RESPOND;
+	registerRespond.registerResult = registerResult;
+	strcpy(registerRespond.messenger, messenger);
+
+	return sendRespond(&registerRespond);
 }
+//--------------------------------------------------------------------------
+
+//---------------------HANDLE LOGIN-----------------------------------------
+int sendLoginRespond(LoginResult loginResult, char* messenger) {
+	LoginRespond loginRespond;
+
+	loginRespond.typeRespond = LOGIN_RESPOND;
+	loginRespond.loginResult = loginResult;
+	strcpy(loginRespond.messenger, messenger);
+
+	return sendRespond(&loginRespond);
+}
+
+void handleLoginRequest(LoginRequest loginRequest) {
+	User user;
+	int userIndex = -1;
+
+	printf("User Login!\n");
+	makeUser(&user, loginRequest.userName, loginRequest.password);
+	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
+	if (userIndex < 0) {
+		sendLoginRespond(LOGIN_INVALID_USERNAME,"User name not found!");
+		return;
+	}
+	if (strcmp(user.password, userRegisted[userIndex].password) != 0) {
+		sendLoginRespond(LOGIN_INVALID_PASSWORD, "Password invalid!");
+		return;
+	}
+	 if (userRegisted[userIndex].status == ONLINE) {
+		sendLoginRespond(LOGIN_ONLINING, "User is onlining!");
+		return;
+	}
+	
+	userRegisted[userIndex].sockFD = currentSockFD;
+	printf("Client %s login success\n", user.userName);
+	sendLoginRespond(LOGIN_SUCCESS, "Login success");
+	setOnline(&userRegisted[userIndex]);
+}
+//--------------------------------------------------------------------------
+
+void handleLogoutRequest(LogoutRequest logoutRequest) {
+	handleClientDisconnect(currentSockFD);
+}
+
+///---------------------CHAT FRIEDN------------------------
+
+void handleChatWithFriendRequest(ChatRequest chatRequest) {
+	int indexSender = -1;
+	int indexReceiver = -1;
+	ChatRespond chatRespond;
+	User user;
+
+	printf("Chat handle\n");
+	chatRespond.typeRespond = CHAT_RESPOND;
+
+	indexSender = findUserIndexWithSockFD(currentSockFD);
+	strcpy(chatRespond.userNameSender, userRegisted[indexSender].userName);
+
+	strcpy(user.userName, chatRequest.userNameReceiver);
+	indexReceiver = findUserIndex(user, userRegisted, numUserRegisted);
+
+	if (indexReceiver == -1) {
+		chatRespond.chatResult = CHAT_USER_NOT_EXISTED;
+		sendRespond(&chatRespond);
+	}
+
+	if (userRegisted[indexReceiver].status == OFFLINE) {
+		chatRespond.chatResult = CHAT_USER_OFFLINE;
+		sendRespond(&chatRespond);
+	}
+
+	chatRespond.chatResult = CHAT_SUCCESS;
+	sendRespond(&chatRespond);
+
+
+	chatRespond.chatResult = CHAT_FRIEND_RECV;
+	strcpy(chatRespond.messenger, chatRequest.messenger);
+	strcpy(chatRespond.userNameSender,userRegisted[indexReceiver].userName);
+	setCurrentSockFD(userRegisted[indexReceiver].sockFD);	
+	sendRespond(&chatRespond);
+}
+
+//-----------SEND USER ONLINE-------------------------------
 
 void sendGetOnlineUserListRespond() {
 	GetOnlineUserListRespond getOnlineUserListRespond;
@@ -302,6 +353,7 @@ void sendGetOnlineUserListRespond() {
 void handleGetListOnlineUserRequest() {
 	sendGetOnlineUserListRespond();
 }
+//---------------------------------------------------------
 
 void recognizeRequest(char* buff) {
 	Request request;
@@ -353,11 +405,10 @@ int main() {
 	int nReady, i,  size;
 	struct sockaddr_in  clientAddr;
 	char buff[sizeof(Request)+1];
-	int userIndex = -1;
 
 	numUserRegisted = readUsersFile("data.txt");
 	for (i = 0; i < numUserRegisted; ++i) {
-		setOffline(&userRegisted[i]);
+		userRegisted[i].status = OFFLINE;
 	}
 
 	listenFD = initConnect(PORT);

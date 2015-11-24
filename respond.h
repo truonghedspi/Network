@@ -75,34 +75,37 @@ typedef struct _GetOnlineUserListRespond {
 	char data[2];
 }GetOnlineUserListRespond;
 
-typedef enum {
-	ON,
-	OFF
-}NotifType;
+//----------------CHAT--------------------------------------
+//----------------------------------------------------------
 
-typedef struct _NotificationRespond {
-	RespondType typeRespond;
-	NotifType notifType;
-	char userName[50];
-	char data[146];
-}NotificationRespond;
+typedef enum {
+	CHAT_SUCCESS,
+	CHAT_FRIEND_RECV,
+	CHAT_USER_OFFLINE,
+	CHAT_USER_NOT_EXISTED
+}ChatResult;
 
 typedef struct _ChatRespond {
 	RespondType typeRespond;
-	ChatType chatType;
-	char userName[50];
+	ChatResult chatResult;
+	char userNameSender[50];
 	char messenger[146];
 }ChatRespond;
 
 typedef struct _ChatRoomRespond {
 	RespondType typeRespond;
-	ChatType chatType;
 	char userName[20];
 	char roomName[30];
 	char messenger[146];
 }ChatRoomRespond;
 
-//respond when user change status
+//---------------CHAT------------------------------------------
+//-------------------------------------------------------------
+
+
+//---------------respond when user change status---------------
+//-------------------------------------------------------------
+
 typedef enum {
 	ONLINE,
 	OFFLINE
@@ -114,5 +117,7 @@ typedef struct _UserChangeStatusRespond {
 	char userName[196];
 }UserChangeStatusRespond;
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 
 #endif

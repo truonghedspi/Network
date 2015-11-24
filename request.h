@@ -27,8 +27,7 @@ typedef struct _LoginRequest {
 
 typedef struct _LogoutRequest {
 	RequestType typeRequest;
-	char userName[100];
-	char password[100];
+	char data[200];
 }LogoutRequest;
 
 typedef struct _RegisterRequest {
@@ -44,20 +43,20 @@ typedef struct _GetOnlineUserListRequest {
 }GetOnlineUserListRequest;
 
 typedef enum{
-	QUIT_CHAT,
-	CHAT,
-	CHAT_ROOM,
-	INVITE_ROOM,
-	IN_ROOM,
-	OUT_ROOM
+	CHAT_FRIEND_SEND
 }ChatType;
 
 typedef struct _ChatRequest {
 	RequestType typeRequest;
 	ChatType chatType;
-	char userName[50];
+	char userNameReceiver[50];
 	char messenger[146];
 }ChatRequest;
 
+//------------ROOM REQUEST---------------
 
+typedef enum {
+	CREATE_ROOM_REQUEST,
+	
+}
 #endif
