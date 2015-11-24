@@ -6,5 +6,9 @@ truong1 dunghoi
 truong11 dunghoi
 tranha 123456
 tranha1 123456
+<<<<<<< HEAD
 tranha2 123456
 tranha3 123456
+=======
+tranha2 123456
+>>>>>>> ff24d7715a030fe7ade02acd2b81d618ac7d7e3c
