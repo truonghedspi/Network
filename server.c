@@ -118,6 +118,7 @@ int sendRespond(void * respond) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 
 void notifyChangeStatusAll(char* userName, UserStatus status) {
 	int i = 0;
@@ -196,11 +197,11 @@ void handleLoginRequest(LoginRequest loginRequest) {
 		sendLoginRespond(LOGIN_ONLINING, "User is onlining!");
 		return;
 	}
-
-	setOnline(&userRegisted[userIndex]);
+	
 	userRegisted[userIndex].sockFD = currentSockFD;
 	printf("Client %s login success\n", user.userName);
 	sendLoginRespond(LOGIN_SUCCESS, "Login success");
+	setOnline(&userRegisted[userIndex]);
 }
 
 void handleLogoutRequest(LogoutRequest logoutRequest) {
