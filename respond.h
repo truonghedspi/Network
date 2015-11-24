@@ -75,7 +75,6 @@ typedef struct _GetOnlineUserListRespond {
 	char data[2];
 }GetOnlineUserListRespond;
 
-<<<<<<< HEAD
 //----------------CHAT--------------------------------------
 //----------------------------------------------------------
 
@@ -86,8 +85,6 @@ typedef enum {
 	CHAT_USER_NOT_EXISTED
 }ChatResult;
 
-=======
->>>>>>> ff24d7715a030fe7ade02acd2b81d618ac7d7e3c
 typedef struct _ChatRespond {
 	RespondType typeRespond;
 	ChatResult chatResult;

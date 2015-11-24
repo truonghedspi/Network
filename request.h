@@ -55,8 +55,4 @@ typedef struct _ChatRequest {
 
 //------------ROOM REQUEST---------------
 
-typedef enum {
-	CREATE_ROOM_REQUEST,
-	
-}
 #endif

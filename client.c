@@ -172,17 +172,11 @@ void notification(char buff[]){
 	if(statusRespond.userStatus==ONLINE){
 		printf("\n@%s vua online",statusRespond.userName);
 		add_partner(statusRespond.userName);
-<<<<<<< HEAD
 		printf("\n");
 	}else if(statusRespond.userStatus==OFFLINE){
 		printf("\n@%s vua offline",statusRespond.userName);
 		del_partner(statusRespond.userName);
 		printf("\n");
-=======
-	}else if(statusRespond.userStatus==OFFLINE){
-		printf("\n@%s vua offline",statusRespond.userName);
-		del_partner(statusRespond.userName);
->>>>>>> ff24d7715a030fe7ade02acd2b81d618ac7d7e3c
 	}
 }
 void check_respond(char mesg[]){
@@ -676,16 +670,11 @@ void main(){
     	printf("\n3.EXIT");
     	//printf("\n");
     	printf("\nChoose: ");
-<<<<<<< HEAD
     	printf("\n");
     	choose=wait_int();
     	//fgets(choose,3,stdin);
     	//scanf("%d",&choose);
     	//while(getchar()!= '\n');
-=======
-    	choose=wait_int();
-    	//fgets(choose,3,stdin);
->>>>>>> ff24d7715a030fe7ade02acd2b81d618ac7d7e3c
     	switch(choose){
 
     		case 1: 
