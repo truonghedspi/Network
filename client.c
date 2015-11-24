@@ -505,6 +505,7 @@ int wait_char(char buff[LEN]){
 				exit(0);
 			}
 			if(size_recv > 0){
+				printf("\nCo hang");
 				check_respond(mesg);
 			}
 			if(--rv <= 0){
@@ -554,6 +555,7 @@ int wait_int(){
 				exit(0);
 			}
 			if(size_recv > 0){
+				printf("\nCo hang");
 				check_respond(mesg);
 			}
 			if(--rv <= 0){
@@ -613,7 +615,7 @@ void menu(){
 void main(){
 	int sockfd;
 	struct sockaddr_in serv_addr;
-	char choose[2];
+	int choose;
 	int t;
 	char buff[LEN];
 
@@ -635,10 +637,11 @@ void main(){
     	printf("\n*****MENU*****\n");
     	printf("\n1.LOG IN\n2.SIGN UP\n3.EXIT" );
     	printf("\nChoose: ");
-    	fgets(choose,3,stdin);
-    	switch(choose[0]){
+    	choose=wait_int();
+    	//fgets(choose,3,stdin);
+    	switch(choose){
 
-    		case '1': 
+    		case 1: 
     				printf("\nLog In");
     				t = login();
     			    if(t == 1) {
@@ -648,13 +651,13 @@ void main(){
     					} while (1);
     				}
    					break;
-    		case '2': 	
+    		case 2: 	
     				printf("\nSign Up");
     				t = sign_up();
     			    //if(t == 1) menu(sockfd);
     			    
     			    break;
-    		case '3':
+    		case 3:
     			close(currentSockFD);
     			return;
     		default : break;

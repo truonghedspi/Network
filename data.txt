@@ -6,3 +6,4 @@ truong1 dunghoi
 truong11 dunghoi
 tranha 123456
 tranha1 123456
+tranha2 123456
