@@ -118,6 +118,7 @@ int sendRespond(void * respond) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////
 
 void notifyChangeStatusAll(char* userName, UserStatus status) {
 	int i = 0;
@@ -196,7 +197,10 @@ void handleLoginRequest(LoginRequest loginRequest) {
 		sendLoginRespond(LOGIN_ONLINING, "User is onlining!");
 		return;
 	}
+<<<<<<< HEAD
 
+=======
+>>>>>>> db73f4b614f475ee69afa4c4e3c8b506d40ff9b7
 	
 	userRegisted[userIndex].sockFD = currentSockFD;
 	printf("Client %s login success\n", user.userName);
