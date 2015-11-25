@@ -43,6 +43,7 @@ int getInt() {
 	return num;
 }
 void getString(char * str) {
+	
 	while (1) {
 		fgets(str,MAX_LENGTH + 1, stdin);
 		str[strlen(str) - 1] = '\0';
@@ -76,19 +77,37 @@ char getch_(int echo) {
 char getch(void) {
     return getch_(0);
 }
-
+int mygetch( ) {		//ham tao dau * khi nhap password
+  struct termios oldt,newt;
+  int ch;
+  tcgetattr( STDIN_FILENO, &oldt );
+  newt = oldt;
+  newt.c_lflag &= ~( ICANON | ECHO );
+  tcsetattr( STDIN_FILENO, TCSANOW, &newt );
+  ch = getchar();
+  tcsetattr( STDIN_FILENO, TCSANOW, &oldt );
+  return ch;
+}
 int get_pass(char pass[]){
 	int i=0;
 
 	while(1){
 		pass[i]=getch();
 		if(pass[i]== '\n') break;
+		printf("*");
 		i++;
 	}
 	pass[i]='\0';
 	return 1;
 }
 
+void format_string(char* string){
+	int i = 0;
+	while(string[i] != '\0'){
+		string[i] = '\0';
+		i++;
+	}
+}
 int check_input(char buff[]){
 	if(strlen(buff)<6 || strlen(buff)>=15) return 0;
 	else return 1;
@@ -135,12 +154,13 @@ void type_chat_respond(char buff[]){
 	chatRespond=(*(ChatRespond*)buff);
 	switch(chatRespond.chatResult){
 		case CHAT_SUCCESS:
-		printf("\nDa gui cho client");
+			printf("\nDa gui cho client");
 			break;
 		case CHAT_USER_OFFLINE:
 			del_partner(chatRespond.userNameSender);
 			break;
 		case CHAT_FRIEND_RECV:
+			fflush(stdout);
 			printf("\n@%s: %s",chatRespond.userNameSender,chatRespond.messenger);
 			break;		
 	}
@@ -170,15 +190,19 @@ void notification(char buff[]){
 
 	statusRespond=(*(UserChangeStatusRespond*)buff);
 	if(statusRespond.userStatus==ONLINE){
-		printf("\n@%s vua online",statusRespond.userName);
+		printf("\nSERV: @%s vua online",statusRespond.userName);
 		add_partner(statusRespond.userName);
 		printf("\n");
 	}else if(statusRespond.userStatus==OFFLINE){
-		printf("\n@%s vua offline",statusRespond.userName);
+		printf("\nSERV: @%s vua offline",statusRespond.userName);
 		del_partner(statusRespond.userName);
+		if(strcmp(statusRespond.userName,currenUserName)==0){
+			format_string(currenUserName);
+		}
 		printf("\n");
 	}
 }
+
 void check_respond(char mesg[]){
 	Respond respond;
 	int t;
@@ -199,12 +223,9 @@ void check_respond(char mesg[]){
 			
 			break;
 		case GET_ONLINE_USER_LIST_RESPOND:
-			printf("\nCHAT_RESPOND");
 			t=take_user_list(mesg);
 			if(t == 1) {
 				show_user_list();
-				//choose_user();
-				//chatting();
 			}
 			else if(t == 0) printf("\nRECEIVING LIST...");
 			else if(t == 2) printf("\nNO OTHER USER IS ONLINE!");
@@ -216,7 +237,99 @@ void check_respond(char mesg[]){
 
 	}
 }
+int wait_char(char buff[LEN]){
+	int rv;
+	int size_recv;
+	char mesg[LEN];
+	fd_set readSet;
+	struct timeval tv;
+	Respond respond;
 
+	format_string(buff);
+	//fflush(stdout);
+	while(1){
+		tv.tv_sec = 0;
+		tv.tv_usec =0;
+		FD_SET(currentSockFD, &readSet);
+		FD_SET(fileno(stdin), &readSet);
+		
+		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
+		if (FD_ISSET(fileno(stdin), &readSet)){
+			getString(buff);
+			return;
+		}
+		if(FD_ISSET(currentSockFD, &readSet)){
+			strcpy(mesg,"");
+			size_recv = recv(currentSockFD,mesg,LEN,0);
+			if(size_recv == 0){
+				printf("\nServer disconnect\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if (size_recv < 0) {
+				printf("Error\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if(size_recv > 0){
+				check_respond(mesg);
+			}
+			if(--rv <= 0){
+                //continue;
+                return;
+            }
+		}
+	}
+}
+
+int wait_int(){
+	
+	char buff[LEN];
+	int n;
+	int rv;
+	int size_recv;
+	char mesg[LEN];
+	fd_set readSet;
+	struct timeval tv;
+	Respond respond;
+
+	format_string(buff);
+	//fflush(stdout);
+	while(1){
+		tv.tv_sec = 0;
+		tv.tv_usec =0;
+		FD_SET(currentSockFD, &readSet);
+		FD_SET(fileno(stdin), &readSet);
+		fflush(stdin);	
+		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
+		if (FD_ISSET(fileno(stdin), &readSet)){	
+			return getInt();
+		}
+		if(FD_ISSET(currentSockFD, &readSet)){
+			strcpy(mesg,"");
+			size_recv = recv(currentSockFD,mesg,LEN,0);
+			if(size_recv == 0){
+				printf("\nServer disconnect\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if (size_recv < 0) {
+				printf("Error\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if(size_recv > 0){
+				check_respond(mesg);
+			}
+			if(--rv <= 0){
+				//n=-1;
+                //continue;
+                return n=-1;
+            }
+		}
+		 
+	}	
+}
 //them doi tuong vao danh sach chatList
 int add_partner(char userName[]){
 	int i=0;
@@ -272,7 +385,7 @@ int login(){
 	}
 	strcpy(user.userName,tk);
 	while(1){
-		printf("Password(Not Diplay): ");
+		printf("Password: ");
 		get_pass(pass);
 		if(check_input(pass) == 0){
 			printf("\nTry Again!!\n");
@@ -327,7 +440,7 @@ int sign_up(){
 	strcpy(user.userName,tk);
 	strcpy(loginRequest.userName,tk);
 	while(1){
-		printf("Password(Not Display): ");
+		printf("Password: ");
 		get_pass(pass);
 		if(check_input(pass) == 0){
 			printf("\nTry Again!!\n");
@@ -428,7 +541,6 @@ int take_user_list(char mesg[]){
 
 		if(y == numUsersOnline) {
 			strcpy(userList[y].userName, userListRespond.onlineUserList[i]);
-			printf("Khong ai trung\n");
 			numUsersOnline++;
 		}
 	}
@@ -450,8 +562,8 @@ void online_user_list_request(){
 
 //chon user de chat
 int choose_user(){
-
 	printf("\nEnter User Name Want Chat With:");
+	fflush(stdin);
 	wait_char(currenUserName);
 	printf("\n");	
 }
@@ -482,6 +594,7 @@ int chatting(){
 
 	printf("\nYou are chat with @%s",currenUserName);
 	do{
+		fflush(stdout);
 		wait_char(buff);
 		if(strcmp(buff,"\\q")==0 || strcmp(buff,"\\Q")==0){
 
@@ -500,132 +613,29 @@ int chatting(){
 	}while(1);
 }
 
-int wait_char(char buff[LEN]){
-	
-	int rv;
-	int size_recv;
-	char mesg[LEN];
-	fd_set readSet;
-	struct timeval tv;
-	Respond respond;
 
-	strcpy(buff,"");
-	while(1){
-		tv.tv_sec = 0;
-		tv.tv_usec =0;
-		FD_SET(currentSockFD, &readSet);
-		FD_SET(fileno(stdin), &readSet);
-		
-		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
-		if(FD_ISSET(currentSockFD, &readSet)){
-			strcpy(mesg,"");
-			size_recv = recv(currentSockFD,mesg,LEN,0);
-			if(size_recv == 0){
-				printf("Server disconnect\n");
-				close(currentSockFD);
-				exit(0);
-			}
-			if (size_recv < 0) {
-				printf("Error\n");
-				close(currentSockFD);
-				exit(0);
-			}
-			if(size_recv > 0){
-				printf("\nCo hang");
-				check_respond(mesg);
-			}
-			if(--rv <= 0){
-				//strcpy(buff,"");
-                continue;
-            }
-		}
-		if (FD_ISSET(fileno(stdin), &readSet)){	
-			//gets(buff);
-			getString(buff);
-			return;
-		} 
-	}
-	//return buff;
-}
-
-int wait_int(){
-	
-	char buff[LEN];
-	int n;
-	int rv;
-	int size_recv;
-	char mesg[LEN];
-	fd_set readSet;
-	struct timeval tv;
-	Respond respond;
-
-	strcpy(buff,"");
-	while(1){
-		tv.tv_sec = 0;
-		tv.tv_usec =0;
-		FD_SET(currentSockFD, &readSet);
-		FD_SET(fileno(stdin), &readSet);
-		
-		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
-		if(FD_ISSET(currentSockFD, &readSet)){
-			strcpy(mesg,"");
-			size_recv = recv(currentSockFD,mesg,LEN,0);
-			if(size_recv == 0){
-				printf("Server disconnect\n");
-				close(currentSockFD);
-				exit(0);
-			}
-			if (size_recv < 0) {
-				printf("Error\n");
-				close(currentSockFD);
-				exit(0);
-			}
-			if(size_recv > 0){
-				printf("\nCo hang");
-				check_respond(mesg);
-			}
-			if(--rv <= 0){
-				//n=-1;
-                continue;
-            }
-		}
-		if (FD_ISSET(fileno(stdin), &readSet)){	
-			
-			return getInt();
-		} 
-	}	
-}
-
-void main_menu() {
-			printf("\n***WAIT USER OR CHOOSE***\n");
-			printf("\n1.SHOW USER LIST");
-			printf("\n2.CHAT WITH");
-			printf("\n3.INVITE USER INTO ROOM");
-			printf("\n4.EXIT");
-			printf("\nChoose: ");
-			printf("\n");
-}
 
 void menu(){
-	//char buff[LEN];
-	int choose;
-	do{	
-		main_menu();
-		choose=wait_int();
 
-	
+	int choose;
+	printf("\n***WAIT USER OR CHOOSE***\n");
+	printf("\n1.SHOW USER LIST");
+	printf("\n2.CHAT WITH");
+	printf("\n3.INVITE USER INTO ROOM");
+	printf("\n4.EXIT");
+	printf("\n");
+	do{	
+		fflush(stdout);
+		choose=wait_int();
 		switch(choose){
 			case 1 :
 				printf("\nYou choose 1");
-				//clear_user_list();
 				online_user_list_request();
 				break;
 			case 2 :
 				printf("\nYou choose 2");
 				choose_user();
 				chatting();
-				//creat_room(chatList);
-				//chat
 				break;
 			case 3 :
 				printf("\nYou choose 3");
@@ -636,6 +646,12 @@ void menu(){
 				log_out();
 				return;
 			default :
+				printf("\n***WAIT USER OR CHOOSE***\n");
+				printf("\n1.SHOW USER LIST");
+				printf("\n2.CHAT WITH");
+				printf("\n3.INVITE USER INTO ROOM");
+				printf("\n4.EXIT");
+				printf("\n");
 				break;
 		}
 	}while(choose!=4);
@@ -662,21 +678,16 @@ void main(){
        printf("\nConnect ERROR!!\n");
        return ;
     }
+    currentSockFD = sockfd;
+    printf("\n*****MENU*****");
+	printf("\n1.LOG IN" );
+	printf("\n2.SIGN UP");
+	printf("\n3.EXIT");
+	printf("\nChoose: ");
     do{
-    	currentSockFD = sockfd;
-    	printf("\n*****MENU*****\n");
-    	printf("\n1.LOG IN" );
-    	printf("\n2.SIGN UP");
-    	printf("\n3.EXIT");
-    	//printf("\n");
-    	printf("\nChoose: ");
-    	printf("\n");
+    	fflush(stdout);
     	choose=wait_int();
-    	//fgets(choose,3,stdin);
-    	//scanf("%d",&choose);
-    	//while(getchar()!= '\n');
     	switch(choose){
-
     		case 1: 
     				printf("\nLog In");
     				t = login();
@@ -701,7 +712,13 @@ void main(){
     		case 3:
     			close(currentSockFD);
     			return;
-    		default : break;
+    		default : 
+    			printf("\n*****MENU*****\n");
+		    	printf("\n1.LOG IN" );
+		    	printf("\n2.SIGN UP");
+		    	printf("\n3.EXIT");
+		    	printf("\nChoose: ");
+    			break;
     			
 
     	}
