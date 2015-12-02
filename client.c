@@ -163,7 +163,7 @@ void type_chat_respond(char buff[]){
 			break;
 		case CHAT_FRIEND_RECV:
 			fflush(stdout);
-			printf("\n@%s: %s",chatRespond.userNameSender,chatRespond.messenger);
+			printf("\n@%s: %s\n",chatRespond.userNameSender,chatRespond.messenger);
 			break;		
 	}
 }
@@ -585,9 +585,10 @@ void online_user_list_request(){
 //chon user de chat
 int choose_user(){
 	char userName[LEN];
-	fflush(stdout);
+	
 	printf("\nEnter User Name Want Chat With:");
 	fflush(stdin);
+	fflush(stdout);
 	wait_char(userName);
 	if(strcmp(userName,"")!=0 ){
 		strcpy(currenUserName,userName);
@@ -651,14 +652,14 @@ int chatting(){
 void menu(){
 
 	int choose;
-	fflush(stdout);
-	printf("\n***WAIT USER OR CHOOSE***\n");
-	printf("\n1.SHOW USER LIST");
-	printf("\n2.CHAT WITH");
-	printf("\n3.INVITE USER INTO ROOM");
-	printf("\n4.EXIT");
-	printf("\n");
+	
 	do{	
+		
+		printf("\n***WAIT USER OR CHOOSE***\n");
+		printf("\n1.SHOW USER LIST");
+		printf("\n2.CHAT WITH");
+		printf("\n3.INVITE USER INTO ROOM");
+		printf("\n4.EXIT\n");
 		fflush(stdout);
 		choose=wait_int();
 		if(choose>0){
@@ -669,8 +670,9 @@ void menu(){
 						online_user_list_request();
 						break;
 					case 2 :
-						fflush(stdout);
+						
 						printf("\nYou choose 2");
+						fflush(stdout);
 						choose_user();
 						if(check_currUserName()==1){
 							chatting();
@@ -687,13 +689,6 @@ void menu(){
 						log_out();
 						return;
 					default :
-						fflush(stdout);
-						printf("\n***WAIT USER OR CHOOSE***\n");
-						printf("\n1.SHOW USER LIST");
-						printf("\n2.CHAT WITH");
-						printf("\n3.INVITE USER INTO ROOM");
-						printf("\n4.EXIT");
-						printf("\n");
 						break;
 				}
 			}
