@@ -19,6 +19,7 @@ struct pollfd clients[OPEN_MAX];
 int maxIndex;
 User userRegisted[OPEN_MAX];
 
+
 int initConnect(const int PORT) {
 	int sockFD;
 	struct sockaddr_in serverAddr;

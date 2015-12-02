@@ -20,6 +20,7 @@ static struct termios old, new;
 int currentSockFD = -1;
 int numUsersOnline = 0;
 char currenUserName[LEN];
+char currenRoom[LEN];
 
 typedef enum{
 	USER,
@@ -32,6 +33,12 @@ typedef struct{
 }User_List;
 User_List chatList[100];
 User_List userList[100];
+typedef struct{
+	char roomName[LEN];
+	int numberUser;
+}Room_List;
+Room_List roomList[10];
+
 int getInt() {
 	int num;
 
@@ -135,6 +142,15 @@ int check_currUserName(){
 			return 1;
 	}
 	return 0;
+}
+
+int show_room_list(){
+	int i;
+
+	for(i=0;i<10;i++){
+		printf("\nRoom #%s have %d member",roomList[i].roomName,roomList[i].numberUser);
+	}
+	return 1;
 }
 int show_user_list(){
 	int i;
@@ -244,6 +260,8 @@ void check_respond(char mesg[]){
 			fflush(stdout);
 			printf("\n");
 			break;
+		case GET_ROOM_LIST_RESPOND:
+			t=take_room_list(mesg);
 		case USER_CHANGE_STATUS_RESPOND:
 			notification(mesg);
 			break;
@@ -546,6 +564,14 @@ int clear_user_list(){
 	}
 }
 
+int take_room_list(char mesg[]){
+	GetRoomListRespond roomListRespond;
+
+	for(int i=0;i<10;i++){
+		strcpy(roomList[i].roomName,roomListRespond.roomList[i]);
+		roomList[i].numberUser=roomListRespond.numberUser[i];
+	}
+}
 int take_user_list(char mesg[]){
 	int i=0,y=0;
 	GetOnlineUserListRespond userListRespond;
@@ -577,6 +603,15 @@ void online_user_list_request(){
 	char mesg[LEN];
 
 	listRequest.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
+	memcpy(mesg,&listRequest,LEN);
+	send(currentSockFD,mesg,LEN,0);
+	return;
+}
+void room_list_request(){
+	ChatRoomRequest roomRequest;
+	char mesg[LEN];
+
+	roomRequest.typeRequest=GET_ROOM_LIST_REQUEST;
 	memcpy(mesg,&listRequest,LEN);
 	send(currentSockFD,mesg,LEN,0);
 	return;
@@ -658,8 +693,9 @@ void menu(){
 		printf("\n***WAIT USER OR CHOOSE***\n");
 		printf("\n1.SHOW USER LIST");
 		printf("\n2.CHAT WITH");
-		printf("\n3.INVITE USER INTO ROOM");
-		printf("\n4.EXIT\n");
+		printf("\n3.SHOW ROOM LIST");
+		printf("\n4.CHOOSE ROOM");
+		printf("\n5.EXIT\n");
 		fflush(stdout);
 		choose=wait_int();
 		if(choose>0){
@@ -681,6 +717,7 @@ void menu(){
 					case 3 :
 						fflush(stdout);
 						printf("\nYou choose 3");
+						room_list_request();
 						//invite_user_into_room(chatList) 
 						break ;
 					case 4 :
