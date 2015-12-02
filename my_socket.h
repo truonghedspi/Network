@@ -27,8 +27,11 @@ typedef struct _User {
 }User;
 
 typedef struct _Room {
-	
-}
+	char roomName[15];
+	int currentUserNum;
+	User userList[10];
+	int maxUser;
+}Room;
 
 int sendAll(int sockFD, char* buf, int * len);
 int receive(int sockFD, char* buff, int maxLength, int flags);

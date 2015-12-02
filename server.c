@@ -12,13 +12,14 @@ char key[] = { ' ', '\n', '\t', 0 };
 #define OPEN_MAX  50
 #define MAX_USER  10
 #define BACKLOG  50
+#define MAX_ROOM 10
 
 int currentSockFD = -1;
 int numUserRegisted = 0;
 struct pollfd clients[OPEN_MAX];
 int maxIndex;
 User userRegisted[OPEN_MAX];
-
+Room rooms[MAX_ROOM];
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -354,7 +355,42 @@ void sendGetOnlineUserListRespond() {
 void handleGetListOnlineUserRequest() {
 	sendGetOnlineUserListRespond();
 }
-//---------------------------------------------------------
+//------------------ROOM----------------------------
+
+void initRoom(Room* rooms, int numRooms) {
+	int i =0;
+
+	strcpy(rooms[0].roomName, "Room1");
+	strcpy(rooms[1].roomName, "Room2");
+	strcpy(rooms[2].roomName, "Room3");
+	strcpy(rooms[3].roomName, "Room4");
+	strcpy(rooms[4].roomName, "Room5");
+	strcpy(rooms[5].roomName, "Room6");
+	strcpy(rooms[6].roomName, "Room7");
+	strcpy(rooms[7].roomName, "Room8");
+	strcpy(rooms[8].roomName, "Room9");
+	strcpy(rooms[9].roomName, "Room10");
+
+	for (i = 0; i < numRooms; ++i) {
+		room[i].maxUser = 10;
+		room[i].currentUserNum = 0;
+	}
+	
+}
+
+void handleGetRoomListRequest(GetRoomListRequest request) {
+	GetRoomListRespond respond;
+	int i =0;
+	char roomList[10][19];
+
+	respond.typeRespond = GET_ROOM_LIST_RESPOND;
+	respond.roomNumber = MAX_ROOM;
+	for (i = 0; i < MAX_ROOM; ++i) {
+		strcpy(roomList[i], rooms[i].roomName);
+	}
+
+	sendRespond(&respond);
+}
 
 void recognizeRequest(char* buff) {
 	Request request;
@@ -363,7 +399,7 @@ void recognizeRequest(char* buff) {
 	RegisterRequest registerRequest;
 	ChatRequest chatRequest;
 	GetOnlineUserListRequest getOnlineUserListRequet;
-	//ChatRoomRequest chatRoomRequest;
+	GetRoomListRequest getRoomListRequest;
 
 	request = *((Request*) buff);
 	switch(request.typeRequest) {
@@ -392,9 +428,9 @@ void recognizeRequest(char* buff) {
 			handleGetListOnlineUserRequest();
 			break;
 
-		case CHAT_ROOM_REQUEST:
-			//chatRoomRequest = *((ChatRoomRequest* )buff);
-			//handleChatRoomRequest(chatRoomRequest);
+		case GET_ROOM_LIST_REQUEST:
+			getRoomListRequest = *((GetRoomListRequest* )buff);
+			handleGetRoomListRequest(getRoomListRequest);
 			break;
 	}
 }
@@ -421,6 +457,8 @@ int main() {
 	}
 
 	maxIndex = 0;
+
+	initRoom(rooms, MAX_ROOM);
 
 	while(1) {
 		nReady = poll(clients, maxIndex + 1, 0);
