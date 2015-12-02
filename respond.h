@@ -97,7 +97,8 @@ typedef struct _ChatRespond {
 typedef struct _GetRoomListRespond {
 	RespondType typeRespond;
 	int roomNumber;
-	char roomList[10][19];
+	char roomList[10][15];
+	int numberUser[10];
 	char data[6];
 }GetRoomListRespond;
 

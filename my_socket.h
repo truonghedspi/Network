@@ -28,7 +28,7 @@ typedef struct _User {
 
 typedef struct _Room {
 	char roomName[15];
-	int currentUserNum;
+	int numberUser;
 	User userList[10];
 	int maxUser;
 }Room;

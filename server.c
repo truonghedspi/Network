@@ -182,6 +182,17 @@ void handleClientDisconnect(int sockFD) {
 //--------------------------------------------------------------------------
 
 //------------HANDLE REGISTER----------------------------------------------
+
+int sendRegisterRespond(RegisterResult registerResult, char* messenger) {
+	RegisterRespond registerRespond;
+
+	registerRespond.typeRespond = REGISTER_RESPOND;
+	registerRespond.registerResult = registerResult;
+	strcpy(registerRespond.messenger, messenger);
+
+	return sendRespond(&registerRespond);
+}
+
 void handleRegisterRequest(RegisterRequest registerRequest) {
 	User user;
 	int userIndex = -1;
@@ -225,15 +236,6 @@ void handleRegisterRequest(RegisterRequest registerRequest) {
 	writeUsersFile("data.txt",user);
 }
 
-int sendRegisterRespond(RegisterResult registerResult, char* messenger) {
-	RegisterRespond registerRespond;
-
-	registerRespond.typeRespond = REGISTER_RESPOND;
-	registerRespond.registerResult = registerResult;
-	strcpy(registerRespond.messenger, messenger);
-
-	return sendRespond(&registerRespond);
-}
 //--------------------------------------------------------------------------
 
 //---------------------HANDLE LOGIN-----------------------------------------
@@ -274,7 +276,7 @@ void handleLoginRequest(LoginRequest loginRequest) {
 }
 //--------------------------------------------------------------------------
 
-void handleLogoutRequest(LogoutRequest logoutRequest) {
+void handleLogoutRequest() {
 	handleClientDisconnect(currentSockFD);
 }
 
@@ -372,13 +374,13 @@ void initRoom(Room* rooms, int numRooms) {
 	strcpy(rooms[9].roomName, "Room10");
 
 	for (i = 0; i < numRooms; ++i) {
-		room[i].maxUser = 10;
-		room[i].currentUserNum = 0;
+		rooms[i].maxUser = 10;
+		rooms[i].numberUser = 0;
 	}
 	
 }
 
-void handleGetRoomListRequest(GetRoomListRequest request) {
+void handleGetRoomListRequest() {
 	GetRoomListRespond respond;
 	int i =0;
 	char roomList[10][19];
@@ -387,8 +389,9 @@ void handleGetRoomListRequest(GetRoomListRequest request) {
 	respond.roomNumber = MAX_ROOM;
 	for (i = 0; i < MAX_ROOM; ++i) {
 		strcpy(roomList[i], rooms[i].roomName);
+		respond.numberUser[i] = rooms[i].numberUser;
 	}
-
+	memcpy(respond.roomList, roomList, 190);
 	sendRespond(&respond);
 }
 
@@ -409,8 +412,7 @@ void recognizeRequest(char* buff) {
 			break;
 
 		case LOGOUT_REQUEST:
-			logoutRequest = *((LogoutRequest* )buff);
-			handleLogoutRequest(logoutRequest);
+			handleLogoutRequest();
 			break;
 
 		case REGISTER_REQUEST:
@@ -429,8 +431,7 @@ void recognizeRequest(char* buff) {
 			break;
 
 		case GET_ROOM_LIST_REQUEST:
-			getRoomListRequest = *((GetRoomListRequest* )buff);
-			handleGetRoomListRequest(getRoomListRequest);
+			handleGetRoomListRequest();
 			break;
 	}
 }
