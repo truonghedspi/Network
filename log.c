@@ -47,9 +47,14 @@ int lay_log(ChatRequest chatRequest){
 	char userNameRecv[LEN];
   	Log chatlog;
   	FILE * f;
+  	int t;
 
   	//lay ten nguoi gui userNameSend
   	//lay ten nguoi nhan userNameRecv
-  	f=mo_file(userNameSend,userNameRecv);
+  	t=mo_file(userNameSend,userNameRecv,f);
+  	if(t == 0)printf("\nlog empty");
+  	else{
+  		
+  	}
 
 }

@@ -33,6 +33,7 @@ typedef struct{
 }User_List;
 User_List chatList[100];
 User_List userList[100];
+
 typedef struct{
 	char roomName[LEN];
 	int numberUser;
@@ -148,7 +149,7 @@ int show_room_list(){
 	int i;
 
 	for(i=0;i<10;i++){
-		printf("\nRoom #%s have %d member",roomList[i].roomName,roomList[i].numberUser);
+		printf("\n#%s have %d member",roomList[i].roomName,roomList[i].numberUser);
 	}
 	return 1;
 }
@@ -566,11 +567,14 @@ int clear_user_list(){
 
 int take_room_list(char mesg[]){
 	GetRoomListRespond roomListRespond;
+	int i;
 
-	for(int i=0;i<10;i++){
+	roomListRespond=(*(GetRoomListRespond*)mesg);
+	for( i=0;i<10;i++){
 		strcpy(roomList[i].roomName,roomListRespond.roomList[i]);
 		roomList[i].numberUser=roomListRespond.numberUser[i];
 	}
+	return 1;
 }
 int take_user_list(char mesg[]){
 	int i=0,y=0;
@@ -612,7 +616,7 @@ void room_list_request(){
 	char mesg[LEN];
 
 	roomRequest.typeRequest=GET_ROOM_LIST_REQUEST;
-	memcpy(mesg,&listRequest,LEN);
+	memcpy(mesg,&roomRequest,LEN);
 	send(currentSockFD,mesg,LEN,0);
 	return;
 }
@@ -720,9 +724,12 @@ void menu(){
 						room_list_request();
 						//invite_user_into_room(chatList) 
 						break ;
-					case 4 :
-						fflush(stdout);
+					case 4:
 						printf("\nYou choose 4");
+						show_room_list();
+					case 5 :
+						fflush(stdout);
+						printf("\nYou choose 5");
 						log_out();
 						return;
 					default :
