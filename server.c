@@ -59,11 +59,11 @@ int findUserIndexWithSockFD(int sockFD) {
 	return -1;
 }
 
-int findUserIndex(User user, User* userRegisted, int numUserRegisted) {
+int findUserIndex(char * userName, User* userRegisted, int numUserRegisted) {
 	int i = 0;
 
 	for (i = 0; i < numUserRegisted; ++i) {
-		if (strcmp(user.userName, userRegisted[i].userName) == 0)
+		if (strcmp(userName, userRegisted[i].userName) == 0)
 			return i; 
 	}
 	return -1;
@@ -219,7 +219,7 @@ void handleRegisterRequest(RegisterRequest registerRequest) {
 
 	//make User with username + pasword
 	makeUser(&user, registerRequest.userName, registerRequest.password);
-	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
+	userIndex = findUserIndex(user.userName, userRegisted,numUserRegisted);
 
 	if (userIndex >= 0 && userIndex < numUserRegisted) {
 		sendRegisterRespond(REGISTER_USER_EXISTED, "User existed!");
@@ -256,7 +256,7 @@ void handleLoginRequest(LoginRequest loginRequest) {
 
 	printf("User Login!\n");
 	makeUser(&user, loginRequest.userName, loginRequest.password);
-	userIndex = findUserIndex(user, userRegisted,numUserRegisted);
+	userIndex = findUserIndex(user.userName, userRegisted,numUserRegisted);
 	if (userIndex < 0) {
 		sendLoginRespond(LOGIN_INVALID_USERNAME,"User name not found!");
 		return;
@@ -296,7 +296,7 @@ void handleChatWithFriendRequest(ChatRequest chatRequest) {
 	strcpy(chatRespond.userNameSender, userRegisted[indexSender].userName);
 
 	strcpy(user.userName, chatRequest.userNameReceiver);
-	indexReceiver = findUserIndex(user, userRegisted, numUserRegisted);
+	indexReceiver = findUserIndex(user.userName, userRegisted, numUserRegisted);
 
 	if (indexReceiver == -1) {
 		chatRespond.chatResult = CHAT_USER_NOT_EXISTED;
@@ -360,6 +360,17 @@ void handleGetListOnlineUserRequest() {
 }
 //------------------ROOM----------------------------
 
+int findRoomIndex(char* roomName, Room* rooms, int numRooms) {
+	int i = 0;
+
+	for (i = 0; i < numRooms; ++i) {
+		if (strcmp(roomName, rooms[i].roomName) == 0)
+			return 1;
+	}
+
+	return -1;
+}
+
 void initRoom(Room* rooms, int numRooms) {
 	int i =0;
 
@@ -398,6 +409,87 @@ void handleGetRoomListRequest() {
 	sendRespond(&respond);
 }
 
+void handleRoomJoin(RoomRequest request) {
+	char roomName[15];
+	int userIndex;
+	int roomIndex;
+	int numberUser = -1;
+	RoomRespond respond;
+
+	respond.typeRespond = ROOM_RESPOND;
+	userIndex = findUserIndexWithSockFD(currentSockFD);
+	roomIndex = findRoomIndex(request.roomName, rooms, MAX_ROOM);
+	if (roomIndex == -1) {
+		printf("Room not existed!\n");
+		return ;
+	}
+
+	numberUser = rooms[roomIndex].numberUser;
+	if (numberUser > 10) {
+		respond.roomResult  = JOIN_FALSE;
+		strcpy(respond.roomName, rooms[roomIndex].roomName);
+		strcpy(respond.messenger, "Room is full!");
+		sendRespond(&respond);
+	}
+
+	strcpy(rooms[roomIndex].userList[numberUser],userRegisted[userIndex].userName);
+	++rooms[roomIndex].numberUser;
+
+	respond.roomResult = JOIN_SUCCESS;
+	sendRespond(&respond);
+}
+
+void sendChatRoomAll(char* userName, char * messenger, Room room) {
+	int i = 0;
+	int userIndex;
+	RoomRespond respond; 
+
+	strcpy(respond.userName, userName);
+	strcpy(respond.messenger, messenger);
+	for (i = 0; i < room.numberUser; ++i) {
+		userIndex = findUserIndex(room.userList[i], userRegisted, numUserRegisted);
+		if (strcmp(userName, room.userList[i]) == 0)
+			continue;
+
+		setCurrentSockFD(userRegisted[userIndex].sockFD);
+		sendRespond(&respond);
+	}
+}
+
+void handleChatRoomRequest(RoomRequest request) {
+	int userIndex;
+	int roomIndex;
+	RoomRespond respond;
+
+	respond.typeRespond = ROOM_RESPOND;
+	roomIndex = findRoomIndex(request.roomName, rooms, MAX_ROOM);
+	userIndex = findUserIndexWithSockFD(currentSockFD);
+
+	if (roomIndex == -1) {
+		respond.roomResult = CHAT_ROOM_FALSE;
+		strcpy(respond.messenger, "Room not existed!");
+		sendRespond(&respond);
+		return;
+	}
+	respond.roomResult = CHAT_ROOM_SUCCESS;
+	sendChatRoomAll(userRegisted[userIndex].userName, request.messenger, rooms[roomIndex]);
+}
+
+void handleRoomRequest(RoomRequest request) {
+	switch (request.roomType) {
+		case JOIN_ROOM:
+			handleRoomJoin(request);
+			break;
+
+		case OUT_ROOM:
+			break;
+
+		case CHAT_ROOM:
+			handleChatRoomRequest(request);
+			break;
+	}
+}
+
 void recognizeRequest(char* buff) {
 	Request request;
 	LoginRequest loginRequest;
@@ -406,6 +498,7 @@ void recognizeRequest(char* buff) {
 	ChatRequest chatRequest;
 	GetOnlineUserListRequest getOnlineUserListRequet;
 	GetRoomListRequest getRoomListRequest;
+	RoomRequest roomRequest;
 
 	request = *((Request*) buff);
 	switch(request.typeRequest) {
@@ -436,6 +529,9 @@ void recognizeRequest(char* buff) {
 		case GET_ROOM_LIST_REQUEST:
 			handleGetRoomListRequest();
 			break;
+		case ROOM_REQUEST:
+			roomRequest = *((RoomRequest* )buff);
+			handleRoomRequest(roomRequest);
 	}
 }
 

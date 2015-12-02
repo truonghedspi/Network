@@ -10,7 +10,7 @@ typedef enum {
 	LOGOUT_REQUEST,
 	REGISTER_REQUEST,
 	CHAT_REQUEST,
-	CHAT_ROOM_REQUEST,
+	ROOM_REQUEST,
 	GET_ONLINE_USER_LIST_REQUEST,
 	GET_ROOM_LIST_REQUEST
 }RequestType;
@@ -60,14 +60,14 @@ typedef enum {
 	JOIN_ROOM,
 	OUT_ROOM,
 	CHAT_ROOM
-}ChatRoomType;
+}RoomType;
 
-typedef struct _ChatRoomRequest {
+typedef struct _RoomRequest {
 	RequestType typeRequest;
-	ChatRoomType chatRoomType;
+	RoomType roomType;
 	char roomName[16];
 	char messenger[180];
-}ChatRoomRequest;
+}RoomRequest;
 
 typedef struct _GetRoomListRequest {
 	RequestType typeRequest;

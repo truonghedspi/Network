@@ -12,7 +12,7 @@ typedef enum {
 	REGISTER_RESPOND,
 	NOTIFICATION_RESPOND,
 	CHAT_RESPOND,
-	CHAT_ROOM_RESPOND,
+	ROOM_RESPOND,
 	GET_ONLINE_USER_LIST_RESPOND,
 	USER_CHANGE_STATUS_RESPOND,
 	GET_ROOM_LIST_RESPOND
@@ -94,7 +94,7 @@ typedef struct _ChatRespond {
 }ChatRespond;
 
 //-----ROOM------------
-typedef struct _GetRoomListRespond {
+typedef struct _GetRoomListRespond  {
 	RespondType typeRespond;
 	int roomNumber;
 	char roomList[10][15];
@@ -109,13 +109,16 @@ typedef enum {
 	OUT_FALSE,
 	CHAT_ROOM_SUCCESS,
 	CHAT_ROOM_FALSE
-}ChatRoomResult;
+}RoomResult;
 
-typedef struct _ChatRoomRespond {
+typedef struct RoomRespond {
 	RespondType typeRespond;
-	ChatRoomResult roomResult;
-	char messenger[146];
-}ChatRoomRespond;
+	RoomResult roomResult;
+	char roomName[26];
+	char userName[20];
+	char messenger[100];
+}RoomRespond;
+
 
 //---------------CHAT------------------------------------------
 //-------------------------------------------------------------
@@ -126,7 +129,9 @@ typedef struct _ChatRoomRespond {
 
 typedef enum {
 	ONLINE,
-	OFFLINE
+	OFFLINE,
+	USER_JOIN_ROOM,
+	USER_OUT_ROOM
 }UserStatus;
 
 typedef struct _UserChangeStatusRespond {
