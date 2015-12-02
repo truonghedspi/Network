@@ -25,5 +25,8 @@ FILE* mo_file(char* userNameSenb, char* userNameRecv){
 	return f;
 }
 int ghi_log(FILE *f,ChatRequest chatRequest){
+	char userNameSenb[LEN];
+	char userNameRecv[LEN];
 
+	//lay ten nguoi gui userNameSend
 }
