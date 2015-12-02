@@ -26,6 +26,10 @@ typedef struct _User {
 	int sockFD;
 }User;
 
+typedef struct _Room {
+	
+}
+
 int sendAll(int sockFD, char* buf, int * len);
 int receive(int sockFD, char* buff, int maxLength, int flags);
 

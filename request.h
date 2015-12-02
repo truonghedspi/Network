@@ -43,10 +43,15 @@ typedef struct _GetOnlineUserListRequest {
 	char data[200];
 }GetOnlineUserListRequest;
 
+typedef enum {
+	CHAT_FRIEND_SEND
+}ChatType;
+
 typedef struct _ChatRequest {
 	RequestType typeRequest;
+	ChatType chatType;
 	char userNameReceiver[50];
-	char messenger[150];
+	char messenger[146];
 }ChatRequest;
 
 //------------ROOM REQUEST---------------
