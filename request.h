@@ -44,7 +44,8 @@ typedef struct _GetOnlineUserListRequest {
 }GetOnlineUserListRequest;
 
 typedef enum {
-	CHAT_FRIEND_SEND
+	CHAT_FRIEND_SEND,
+	CHAT_LOG_REQUEST
 }ChatType;
 
 typedef struct _ChatRequest {
@@ -59,7 +60,7 @@ typedef struct _ChatRequest {
 typedef enum {
 	JOIN_ROOM,
 	OUT_ROOM,
-	CHAT_ROOM
+	CHAT_ROOM_REQUEST
 }RoomType;
 
 typedef struct _RoomRequest {

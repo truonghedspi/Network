@@ -1,60 +1,122 @@
 #include <time.h>
 typedef struct _Log{
-	char time[LEN];
-	char userNameSend[LEN];
+	char time[15];
+	char userNameSend[15];
+	char constan[LEN]
 }Log;
-int mo_file(char* userNameSend, char* userNameRecv, FILE* f){
-	//FILE *f;
-	char* filename1;
-	char* filename2;
+int find_file_name(char* userNameSend, char* userNameRecv,char fileName[]){
+	char* fileName1;
+	char* fileName2;
 
-	strcpy(filename1,userNameSend);
-	strcat(filename1,"_");
-	strcat(filename1,userNameRecv);
-	strcat(filename1,".dat");
-	strcpy(filename2,userNameRecv);
-	strcat(filename2,"_");
-	strcat(filename2,userNameSend);
-	strcat(filename2,".dat");
+	strcpy(fileName1,"/DataLog/");
+	strcpy(fileName2,"/DataLog/");
+	strcat(fileName1,userNameSend);
+	strcat(fileName1,"_");
+	strcat(fileName1,userNameRecv);
+	strcat(fileName1,".dat");
+	strcat(fileName2,userNameRecv);
+	strcat(fileName2,"_");
+	strcat(fileName2,userNameSend);
+	strcat(fileName2,".dat");
 
-	f=fopen(filename1,"ab");
-	if(f == NULL){
-		f=fopen(filename2,"ab");
-	}else return 1;
-	if(f == NULL){
-		f=fopen(filename1,"a+b");
-	}else return 2
+	f=fopen(fileName1,"rb");
+	if(f != NULL){
+		strcpy(fileName,fileName1);
+		fclose(f);
+		return 1;
+	}else {
+		f=fopen(fileName2,"rb");
+		if(f != NULL){
+			strcpy(fileName,fileName2);
+			fclose(f);
+			return 1;
+		}else{
+			f=fopen(fileName1,"wb");
+			strcpy(fileName,fileName1);
+			fclose(f);
+			return 1;
+			
+		}
+	}
 	return 0;
 }
-void ghi_log(FILE *f,ChatRequest chatRequest){
+int write_log(ChatRequest chatRequest){
 	char userNameSend[LEN];
 	char userNameRecv[LEN];
+	char fileName[LEN];
 	time_t rawtime;
   	struct tm * timeinfo;
-  	Log chatlog;
+  	Log chatLog;
+  	FILE *f;
+  	int userIndex;
 
-  	time ( &rawtime );
-  	timeinfo = localtime ( &rawtime );
+
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+
 	//lay ten nguoi gui userNameSend
-	strcpy(chatlog.userNameSend,userNameSend);
-	strcpy(chatlog.time,asctime (timeinfo));
-	fwrite(&chatlog,sizeof(chatlog),1,f);
-	fclose(f);
+	strcpy(chatRequest.userNameReceiver,usernameRecv);
+	t=find_file_name(userNameSend,usernameRecv,fileName);
+  	if(t==1){
+  		f=fopen(fileName,"ab");
+  		time ( &rawtime );
+  	  	timeinfo = localtime ( &rawtime );
+  	  	strcpy(chatLog.time,asctime (timeinfo));
+  		strcpy(chatLog.userNameSend,userNameSend);
+  		strcpy(chatLog.constan,chatRequest.messenger)
+  		fwrite(&chatLog,sizeof(Log),1,f);
+  		fclose(f);
+  		return 1;
+  	}else return 0;
 
 }
-int lay_log(ChatRequest chatRequest){
-	char userNameSend[LEN];
-	char userNameRecv[LEN];
-  	Log chatlog;
+
+int rewrite(char fileName[]){
+	Log chatLog[10];
+	FILE *f;
+	int i;
+
+	f=fopen(fileName,"rb");
+	if(fseek(f,10*sizeof(Log),SEEK_SET) == 0){
+
+	}
+
+}
+int get_log(char userNameSend[],char userNameRecv[],Log chatLog;int i){
   	FILE * f;
   	int t;
+  	char fileName[LEN];
 
-  	//lay ten nguoi gui userNameSend
-  	//lay ten nguoi nhan userNameRecv
-  	t=mo_file(userNameSend,userNameRecv,f);
-  	if(t == 0)printf("\nlog empty");
-  	else{
-  		
+  	t=find_file_name(userNameSend,userNameRecv,fileName);
+  	
+  	if(t==1){
+  		f=fopen(fileName,"ab");
+  		if(fseek(f,-10*sizeof(Log),SEEK_SET)!=0){
+			rewind(f);
+		}
+		if(fseek(f,i*sizeof(Log),SEEK_SET)!=0){
+			printf("fseek failed!!\n");
+			return 0;
+		}
+		fread(&chatLog,sizeof(Log),1,f);
+		if(feof(f)){
+			return 0;
+		}
+		else {
+			fclose(f);
+			return 1;
+		}
   	}
+  	return 0;
 
+}
+//xu ly khi nhan dc chatType ==  CHAT_LOG_REQUEST
+i=0;
+ChatRespond respond;
+while(1){
+	get_log(userNameSend,userNameRecv,chatLog,i)
+	strcpy(respond.messenger,chatLog.time);
+	strcat(respond.messenger,chatLog.userNameSend);
+	strcat(respond.messenger,chatLog.constan);
+	respond.chatResult=CHAT_LOG_RESPOND;
+	//va gui tra respond cho thang da yeu cau
 }

@@ -83,7 +83,8 @@ typedef enum {
 	CHAT_SUCCESS,
 	CHAT_FRIEND_RECV,
 	CHAT_USER_OFFLINE,
-	CHAT_USER_NOT_EXISTED
+	CHAT_USER_NOT_EXISTED,
+	CHAT_LOG_RESPOND
 }ChatResult;
 
 typedef struct _ChatRespond {
@@ -103,12 +104,13 @@ typedef struct _GetRoomListRespond  {
 }GetRoomListRespond;
 
 typedef enum {
-	JOIN_SUCCESS,
 	JOIN_FALSE,
-	OUT_SUCCESS,
 	OUT_FALSE,
 	CHAT_ROOM_SUCCESS,
-	CHAT_ROOM_FALSE
+	CHAT_ROOM_FALSE,
+	OUT_SUCCESS,
+	JOIN_SUCCESS,
+	CHAT_ROOM
 }RoomResult;
 
 typedef struct RoomRespond {
