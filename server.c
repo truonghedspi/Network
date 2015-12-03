@@ -21,6 +21,108 @@ int maxIndex;
 User userRegisted[OPEN_MAX];
 Room rooms[MAX_ROOM];
 
+/////////////////////////////LOG/////////////////////////
+int find_file_name(char* userNameSend, char* userNameRecv,char fileName[]){
+	char fileName1[35];
+	char fileName2[35];
+	FILE *f;
+
+	strcpy(fileName1,"DataLog/");
+	strcpy(fileName2,"DataLog/");
+	strcat(fileName1,userNameSend);
+	strcat(fileName1,"_");
+	strcat(fileName1,userNameRecv);
+	strcat(fileName1,".dat");
+	strcat(fileName2,userNameRecv);
+	strcat(fileName2,"_");
+	strcat(fileName2,userNameSend);
+	strcat(fileName2,".dat");
+
+	f=fopen(fileName1,"rb");
+	if(f != NULL){
+		strcpy(fileName,fileName1);
+		fclose(f);
+		return 1;
+	}else {
+		f=fopen(fileName2,"rb");
+		if(f != NULL){
+			strcpy(fileName,fileName2);
+			fclose(f);
+			return 1;
+		}else{
+			strcpy(fileName,fileName1);
+			return 1;
+			
+		}
+	}
+	return 0;
+}
+int write_log(ChatRequest chatRequest){
+	char userNameSend[15];
+	char userNameRecv[15];
+	char fileName[35];
+	time_t rawtime;
+  	struct tm * timeinfo;
+  	Log chatLog;
+  	FILE *f;
+  	int userIndex,t;
+
+
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+	strcpy(userNameSend,userRegisted[userIndex].userName);
+	strcpy(userNameRecv,chatRequest.userNameReceiver);
+	t=find_file_name(userNameSend,userNameRecv,fileName);
+  	if(t==1){
+  		f=fopen(fileName,"ab");
+  		//rewind(f);
+  		fseek(f,0,SEEK_SET);
+  		time ( &rawtime );
+  	  	timeinfo = localtime ( &rawtime );
+  	  	strcpy(chatLog.time,asctime (timeinfo));
+  	  	chatLog.time[strlen(chatLog.time)-1]='\0';
+  		strcpy(chatLog.userNameSend,userNameSend);
+  		strcpy(chatLog.constan,chatRequest.messenger);
+  		fwrite(&chatLog,sizeof(Log),1,f);
+  		fclose(f);
+  		return 1;
+  	}else return 0;
+
+}
+
+int get_log(ChatRequest chatRequest,Log chatLog[]){
+  	char userNameSend[15];
+	char userNameRecv[15];
+	char fileName[35];
+  	FILE *f;
+  	int userIndex,t,i=0;
+
+  	
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+	strcpy(userNameSend,userRegisted[userIndex].userName);
+	strcpy(userNameRecv,chatRequest.userNameReceiver);
+  	t=find_file_name(userNameSend,userNameRecv,fileName);
+  	
+  	while(1){
+  		f=fopen(fileName,"rb");
+  		if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
+			printf("\nfseek error");
+			break;
+		}
+		fread(&chatLog[i],sizeof(Log),1,f);
+		if(feof(f)){
+			break;
+		}else{
+			fclose(f);
+			i++;
+		}
+  	}
+  	return i;
+  	//printf("\n");
+
+}
+
+
+/////////////////////////////////////////////////////////////
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -281,42 +383,112 @@ void handleLogoutRequest() {
 	handleClientDisconnect(currentSockFD);
 }
 
-///---------------------CHAT FRIEDN------------------------
+///---------------------CHAT FRIEND------------------------
+/////////////////////////chat log request//
+void handleChatLogRequest(ChatRequest chatRequest){
+	int indexSender = -1;
+	int indexReceiver = -1;
+	ChatRespond chatRespond;
+	User user;
+	Log chatLog[1000];
+	int i=0,max_log;
 
+	
+
+	/*while(1){
+
+		if(get_log(chatRequest,chatLog,i)!=0){
+			strcpy(chatRespond.messenger,chatLog.time);
+			strcat(chatRespond.messenger,"-");
+			strcat(chatRespond.messenger,chatLog.userNameSend);
+			strcat(chatRespond.messenger,"-");
+			strcat(chatRespond.messenger,chatLog.constan);
+			sendRespond(&chatRespond);
+			printf("\nGui 1");
+			i++;
+		}else break;
+	}*/	
+		max_log=get_log(chatRequest,chatLog);
+		printf("\nAAAAAAA%s",chatLog[max_log-1].constan);
+		if(max_log<10){
+			printf("\nMax log <10");
+			while(i<max_log){
+				chatRespond.typeRespond== CHAT_RESPOND;
+				chatRespond.chatResult=CHAT_LOG_RESPOND;
+				strcpy(chatRespond.userNameSender,"");
+				//if(i==max_log) break;
+				strcpy(chatRespond.messenger,chatLog[i].time);
+				strcat(chatRespond.messenger,"-");
+				strcat(chatRespond.messenger,chatLog[i].userNameSend);
+				strcat(chatRespond.messenger,"-");
+				strcat(chatRespond.messenger,chatLog[i].constan);
+				sendRespond(&chatRespond);
+				i++;
+			}
+		}else{
+			printf("\nMax log >10");
+			i=9;
+			while(i>=0){
+				//if(i==-1) break;
+				chatRespond.typeRespond== CHAT_RESPOND;
+				chatRespond.chatResult=CHAT_LOG_RESPOND;
+				strcpy(chatRespond.userNameSender,"");
+				strcpy(chatRespond.messenger,chatLog[max_log-i].time);
+				strcat(chatRespond.messenger,"-");
+				strcat(chatRespond.messenger,chatLog[max_log-i].userNameSend);
+				strcat(chatRespond.messenger,"-");
+				strcat(chatRespond.messenger,chatLog[max_log-i].constan);
+				sendRespond(&chatRespond);
+				i--;
+			}
+		}
+		return;
+}
+
+
+///////////////////////
 void handleChatWithFriendRequest(ChatRequest chatRequest) {
 	int indexSender = -1;
 	int indexReceiver = -1;
 	ChatRespond chatRespond;
 	User user;
 
-	printf("Chat handle\n");
-	chatRespond.typeRespond = CHAT_RESPOND;
-
-	indexSender = findUserIndexWithSockFD(currentSockFD);
-	strcpy(chatRespond.userNameSender, userRegisted[indexSender].userName);
-
-	strcpy(user.userName, chatRequest.userNameReceiver);
-	indexReceiver = findUserIndex(user.userName, userRegisted, numUserRegisted);
-
-	if (indexReceiver == -1) {
-		chatRespond.chatResult = CHAT_USER_NOT_EXISTED;
+	if(chatRequest.chatType==CHAT_FRIEND_SEND){
+		printf("Chat handle\n");
+		chatRespond.typeRespond = CHAT_RESPOND;
+		indexSender = findUserIndexWithSockFD(currentSockFD);
+		strcpy(chatRespond.userNameSender, userRegisted[indexSender].userName);
+	
+		strcpy(user.userName, chatRequest.userNameReceiver);
+		indexReceiver = findUserIndex(user.userName, userRegisted, numUserRegisted);
+	
+		if (indexReceiver == -1) {
+			chatRespond.chatResult = CHAT_USER_NOT_EXISTED;
+			sendRespond(&chatRespond);
+		}
+	
+		if (userRegisted[indexReceiver].status == OFFLINE) {
+			chatRespond.chatResult = CHAT_USER_OFFLINE;
+			sendRespond(&chatRespond);
+		}
+	
+		chatRespond.chatResult = CHAT_SUCCESS;
 		sendRespond(&chatRespond);
-	}
+	
+	////log
+		write_log(chatRequest);
 
-	if (userRegisted[indexReceiver].status == OFFLINE) {
-		chatRespond.chatResult = CHAT_USER_OFFLINE;
+	///////////////	
+		chatRespond.chatResult = CHAT_FRIEND_RECV;
+		strcpy(chatRespond.messenger, chatRequest.messenger);
+		strcpy(chatRespond.userNameSender,userRegisted[indexReceiver].userName);
+		setCurrentSockFD(userRegisted[indexReceiver].sockFD);	
 		sendRespond(&chatRespond);
+	
+		
+	}else if(chatRequest.chatType==CHAT_LOG_REQUEST){
+		handleChatLogRequest(chatRequest);
 	}
-
-	chatRespond.chatResult = CHAT_SUCCESS;
-	sendRespond(&chatRespond);
-
-
-	chatRespond.chatResult = CHAT_FRIEND_RECV;
-	strcpy(chatRespond.messenger, chatRequest.messenger);
-	strcpy(chatRespond.userNameSender,userRegisted[indexReceiver].userName);
-	setCurrentSockFD(userRegisted[indexReceiver].sockFD);	
-	sendRespond(&chatRespond);
 }
 
 //-----------SEND USER ONLINE-------------------------------
@@ -409,6 +581,28 @@ void handleGetRoomListRequest() {
 	sendRespond(&respond);
 }
 
+int getIndexUserInRoom(Room room, char* userName) {
+	int userIndex = -1;
+
+	for (userIndex = 0; userIndex < room.numberUser; ++userIndex) {
+		if (strcmp(room.userList[userIndex], userName))
+			return userIndex;
+	}
+
+	return -1;
+}
+
+
+void removeUserInRoom(Room *room, int index) {
+	int i = 0;
+
+	for (i = index; i < room->numberUser - 1; ++i) {
+		strcpy(room->userList[i], room->userList[i+1]);
+	}
+
+	--room->numberUser;
+}
+
 void handleRoomJoin(RoomRequest request) {
 	char roomName[15];
 	int userIndex;
@@ -417,6 +611,7 @@ void handleRoomJoin(RoomRequest request) {
 	RoomRespond respond;
 
 	respond.typeRespond = ROOM_RESPOND;
+	strcpy(respond.roomName,request.roomName);
 	userIndex = findUserIndexWithSockFD(currentSockFD);
 	roomIndex = findRoomIndex(request.roomName, rooms, MAX_ROOM);
 	if (roomIndex == -1) {
@@ -430,6 +625,7 @@ void handleRoomJoin(RoomRequest request) {
 		strcpy(respond.roomName, rooms[roomIndex].roomName);
 		strcpy(respond.messenger, "Room is full!");
 		sendRespond(&respond);
+		return;
 	}
 
 	strcpy(rooms[roomIndex].userList[numberUser],userRegisted[userIndex].userName);
@@ -437,15 +633,19 @@ void handleRoomJoin(RoomRequest request) {
 
 	respond.roomResult = JOIN_SUCCESS;
 	sendRespond(&respond);
+	sendRoomAll(userRegisted[userIndex].userName, "", rooms[roomIndex], USER_JOIN_ROOM);
 }
 
-void sendChatRoomAll(char* userName, char * messenger, Room room) {
+void sendRoomAll(char* userName, char * messenger, Room room, RoomResult roomResult) {
 	int i = 0;
 	int userIndex;
 	RoomRespond respond; 
 
+	respond.typeRespond = ROOM_RESPOND;
+	respond.roomResult = roomResult;
 	strcpy(respond.userName, userName);
 	strcpy(respond.messenger, messenger);
+	strcpy(respond.roomName, room.roomName);
 	for (i = 0; i < room.numberUser; ++i) {
 		userIndex = findUserIndex(room.userList[i], userRegisted, numUserRegisted);
 		if (strcmp(userName, room.userList[i]) == 0)
@@ -472,7 +672,42 @@ void handleChatRoomRequest(RoomRequest request) {
 		return;
 	}
 	respond.roomResult = CHAT_ROOM_SUCCESS;
-	sendChatRoomAll(userRegisted[userIndex].userName, request.messenger, rooms[roomIndex]);
+	sendRoomAll(userRegisted[userIndex].userName, request.messenger, rooms[roomIndex], CHAT_ROOM);
+}
+
+void handleRoomOut(RoomRequest request) {
+	char roomName[15];
+	int userIndex;
+	int roomIndex;
+	int numberUser = -1;
+	int indexUserInRoom = -1;
+	RoomRespond respond;
+
+
+
+	respond.typeRespond = ROOM_RESPOND;
+	strcpy(respond.roomName,request.roomName);
+	userIndex = findUserIndexWithSockFD(currentSockFD);
+	roomIndex = findRoomIndex(request.roomName, rooms, MAX_ROOM);
+	if (roomIndex == -1) {
+		printf("Room not existed!\n");
+		return ;
+	}
+
+	indexUserInRoom = getIndexUserInRoom(rooms[roomIndex], userRegisted[userIndex].userName);
+	if (indexUserInRoom == -1) {
+		respond.roomResult  = OUT_FALSE;
+		strcpy(respond.roomName, rooms[roomIndex].roomName);
+		strcpy(respond.messenger, "Room not existed!");
+		sendRespond(&respond);
+		return;
+	}
+	removeUserInRoom(&rooms[roomIndex], indexUserInRoom);
+
+
+	respond.roomResult = OUT_SUCCESS;
+	sendRespond(&respond);
+	sendRoomAll(userRegisted[userIndex].userName, "", rooms[roomIndex], USER_OUT_ROOM);
 }
 
 void handleRoomRequest(RoomRequest request) {
@@ -482,9 +717,10 @@ void handleRoomRequest(RoomRequest request) {
 			break;
 
 		case OUT_ROOM:
+			handleRoomOut(request);
 			break;
 
-		case CHAT_ROOM:
+		case CHAT_ROOM_REQUEST:
 			handleChatRoomRequest(request);
 			break;
 	}

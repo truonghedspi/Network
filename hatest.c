@@ -4,9 +4,9 @@
 #include <time.h>
 #define LEN 204
 typedef struct _Log{
-	char time[LEN];
-	char userNameSend[LEN];
-	char constan[LEN]
+	char time[30];
+	char userNameSend[20];
+	char constan[100];
 }Log;
 typedef enum {
 	LOGIN_REQUEST,
@@ -146,17 +146,102 @@ int get_log(char userNameSend[],char userNameRecv[],Log chatlog,int i){
 
 }
 */
+/*int get_log(ChatRequest chatRequest,Log chatLog,int i){
+  	char userNameSend[15];
+	char userNameRecv[15];
+	char fileName[35];
+  	FILE *f;
+  	int userIndex,t;
 
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+	strcpy(userNameSend,userRegisted[userIndex].userName);
+	strcpy(userNameRecv,chatRequest.userNameReceiver);
+  	t=find_file_name(userNameSend,userNameRecv,fileName);
+  	
+  	if(t==1){
+  		f=fopen(fileName,"ab");
+  		if(fseek(f,-10*sizeof(Log),SEEK_SET)!=0){
+			rewind(f);
+		}
+		if(fseek(f,i*sizeof(Log),SEEK_SET)!=0){
+			printf("fseek failed!!\n");
+			return 0;
+		}
+		fread(&chatLog,sizeof(Log),1,f);
+		if(feof(f)){
+			return 0;
+		}
+		else {
+			fclose(f);
+			return 1;
+		}
+  	}
+  	return 0;
+
+}*/
 void main(){
-	Log chatLog;
+	Log chatLog[1000],chatLog2;
 	char mesg[LEN];
-	
-	strcpy(chatLog.time,"10h23");
-	strcpy(chatLog.userNameSend,"tranha");
-	strcpy(chatLog.constan,"bla bla bla");
+	FILE *f;
+	int i=0,y=1;
 
-	memcpy(mesg,&chatLog,LEN);
-	printf("\nmesg;%s", mesg);
-}
+	time_t rawtime;
+  	struct tm * timeinfo;
+	
+		/*f=fopen("DataLog/tranha1_tranha.dat","wb");
+  		time ( &rawtime );
+  	  	timeinfo = localtime ( &rawtime );
+  	  	strcpy(chatLog.time,asctime (timeinfo));
+  	  	chatLog.time[strlen(chatLog.time)-1]='\0';
+  		strcpy(chatLog.userNameSend,"trandanhha");
+  		strcpy(chatLog.constan,"Toi la ha");
+  		fwrite(&chatLog,sizeof(Log),1,f);
+  		fclose(f);*/
+
+
+	while(1){
+		f=fopen("DataLog/tranha1_tranha.dat","rb");
+		//fseek(f, 0, SEEK_END);
+		/*while(1){
+			fseek(f,y*sizeof(Log),SEEK_SET);
+			if(feof(f)) break;
+			y++;
+		}*/
+		/*printf("\nYYYYYY: %d",y );
+		if(fseek(f,-10*sizeof(Log),SEEK_SET)==-1){
+			rewind(f);
+		}*/
+		
+		if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
+			printf("\nfseekaaaaaaa");
+			break;
+		}
+		
+		fread(&chatLog[i],sizeof(Log),1,f);
+		if(feof(f)){
+			break;
+		}else{
+			fclose(f);
+			i++;
+		}
+		
+		
+	}
+	printf("iiiiiiiiii%d\n",i );
+	for(y=0;y<i;y++){
+			printf("\nTime: %s",chatLog[y].time);
+			printf("\nUser: %s",chatLog[y].userNameSend);
+			printf("\nCons: %s",chatLog[y].constan);
+		}
+
+	/*f=fopen("DataLog/tranha1_tranha.dat","rb");
+	fseek(f,2*sizeof(Log),SEEK_SET);
+	fread(&chatLog,sizeof(Log),1,f);
+	printf("\nTime: %s",chatLog.time);
+	printf("\nUser Name: %s",chatLog.userNameSend);
+	printf("\nConstan: %s\n",chatLog.constan);
+
+	fclose(f);
+*/}
 
  

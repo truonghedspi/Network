@@ -53,7 +53,7 @@ int write_log(ChatRequest chatRequest){
 
   	userIndex =  findUserIndexWithSockFD(currentSockFD);
 
-	//lay ten nguoi gui userNameSend
+	strcpy(userNameSend,userRegisted[userIndex].userName);
 	strcpy(chatRequest.userNameReceiver,usernameRecv);
 	t=find_file_name(userNameSend,usernameRecv,fileName);
   	if(t==1){

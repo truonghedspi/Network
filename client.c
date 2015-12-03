@@ -190,8 +190,11 @@ void type_chat_respond(char buff[]){
 			del_partner(chatRespond.userNameSender);
 			break;
 		case CHAT_FRIEND_RECV:
-			fflush(stdout);
 			printf("\n@%s: %s\n",chatRespond.userNameSender,chatRespond.messenger);
+			break;
+		case CHAT_LOG_RESPOND:
+			printf("\nVao day");
+			printf("\n%s",chatRespond.messenger);
 			break;
 		default :
 			break;		
@@ -208,7 +211,13 @@ void type_chat_room_respond(char buff[]){
 			printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
 			break;
 		case JOIN_SUCCESS:
-			printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
+			printf("\nJoin #%s success",roomRespond.roomName);
+			break;
+		case USER_JOIN_ROOM :
+			printf("\n#%s: User %s Join room! ",roomRespond.roomName,roomRespond.userName);
+			break;
+		case USER_OUT_ROOM:
+			printf("\n#%s: User %s Join room! ",roomRespond.roomName,roomRespond.userName);
 			break;
 		case JOIN_FALSE:
 			format_string(currenRoom);
@@ -265,7 +274,7 @@ void check_respond(char mesg[]){
 			type_chat_respond(mesg);
 			break;
 		case ROOM_RESPOND:
-			
+			type_chat_room_respond(mesg);
 			
 			break;
 		case GET_ONLINE_USER_LIST_RESPOND:
@@ -514,7 +523,7 @@ int sign_up(){
 		}else break;
 	}
 	while(1){
-		printf("Re-Enter Password: ");
+		printf("\nRe-Enter Password: ");
 		get_pass(comf_pass);
 		if(strcmp(pass,comf_pass)==0) break;
 	}
@@ -574,13 +583,6 @@ int log_out(){
 	memcpy(mesg,&request,LEN);
 	send(currentSockFD,mesg,LEN,0);
 	return 1;
-}
-
-int creat_room(){
-}
-
-//tra loi yeu cau moi vao nhom Chat
-int answer_invite_room(){
 }
 
 int clear_user_list(){
@@ -647,7 +649,7 @@ void room_list_request(){
 	return;
 }
 int out_room(){
-	send_chat_room(NULL,OUT_ROOM);
+	send_chat_room("",OUT_ROOM);
 	format_string(currenRoom);
 
 }
@@ -670,7 +672,7 @@ int choose_room(){
 			if(check_currRoom()==1) break;
 		}
 	}
-	send_chat_room(NULL,JOIN_ROOM);
+	send_chat_room("",JOIN_ROOM);
 	return 1;
 }
 //chon user de chat
@@ -749,7 +751,7 @@ int chatting_room(){
 				if(strcmp(buff,"\\l")==0 || strcmp(buff,"\\L")==0){
 		
 				}else
-				if(strcmp(buff,"\\h")==0 || strcmp(buff,"\\H")==0){
+				if(strcmp(buff,"\\m")==0 || strcmp(buff,"\\M")==0){
 					return 1;
 				}else{
 					send_chat_room(buff,CHAT_ROOM_REQUEST);
@@ -768,8 +770,8 @@ int chatting(){
 		fflush(stdout);
 		wait_char(buff);
 		if(strcmp(buff,"")!=0){
-				if(strcmp(buff,"\\q")==0 || strcmp(buff,"\\Q")==0){
-		
+				if(strcmp(buff,"\\m")==0 || strcmp(buff,"\\m")==0){
+					return 1;
 				}else
 				if(strcmp(buff,"\\r")==0 || strcmp(buff,"\\R")==0){
 		
@@ -778,7 +780,7 @@ int chatting(){
 		
 				}else
 				if(strcmp(buff,"\\h")==0 || strcmp(buff,"\\H")==0){
-					return 1;
+					send_chat(buff,CHAT_LOG_REQUEST);
 				}else{
 					send_chat(buff,CHAT_FRIEND_SEND);
 				}

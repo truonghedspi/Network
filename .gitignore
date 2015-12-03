@@ -1,0 +1,7 @@
+test
+test.c
+a.out
+hatest
+hatest.c
+*.o
+score.h

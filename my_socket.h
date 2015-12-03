@@ -17,6 +17,13 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <poll.h>
+#include <time.h>
+
+typedef struct _Log{
+	char time[30];
+	char userNameSend[20];
+	char constan[100];
+}Log;
 
 
 typedef struct _User {

@@ -104,13 +104,16 @@ typedef struct _GetRoomListRespond  {
 }GetRoomListRespond;
 
 typedef enum {
-	JOIN_FALSE,
+	
 	OUT_FALSE,
 	CHAT_ROOM_SUCCESS,
 	CHAT_ROOM_FALSE,
+	JOIN_FALSE,
 	OUT_SUCCESS,
 	JOIN_SUCCESS,
-	CHAT_ROOM
+	CHAT_ROOM,
+	USER_JOIN_ROOM,
+	USER_OUT_ROOM
 }RoomResult;
 
 typedef struct RoomRespond {
@@ -131,9 +134,7 @@ typedef struct RoomRespond {
 
 typedef enum {
 	ONLINE,
-	OFFLINE,
-	USER_JOIN_ROOM,
-	USER_OUT_ROOM
+	OFFLINE
 }UserStatus;
 
 typedef struct _UserChangeStatusRespond {
