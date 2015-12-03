@@ -193,7 +193,6 @@ void type_chat_respond(char buff[]){
 			printf("\n@%s: %s\n",chatRespond.userNameSender,chatRespond.messenger);
 			break;
 		case CHAT_LOG_RESPOND:
-			printf("\nVao day");
 			printf("\n%s",chatRespond.messenger);
 			break;
 		default :
@@ -221,9 +220,12 @@ void type_chat_room_respond(char buff[]){
 			break;
 		case JOIN_FALSE:
 			format_string(currenRoom);
+			printf("\nJOIN FALSE");
 			break;
 		case OUT_SUCCESS:
-			printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
+			format_string(currenRoom);
+			printf("\nOUT SUCCESS");
+			//printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
 			break;
 		case OUT_FALSE:
 			break;
@@ -833,7 +835,6 @@ void menu(){
 						}
 						break;
 					case 5 :
-						fflush(stdout);
 						printf("\nYou choose 5");
 						log_out();
 						return;
@@ -841,7 +842,7 @@ void menu(){
 						break;
 				}
 			}
-	}while(choose!=4);
+	}while(choose!=5);
 
 }
 

@@ -74,7 +74,6 @@ int write_log(ChatRequest chatRequest){
 	t=find_file_name(userNameSend,userNameRecv,fileName);
   	if(t==1){
   		f=fopen(fileName,"ab");
-  		//rewind(f);
   		fseek(f,0,SEEK_SET);
   		time ( &rawtime );
   	  	timeinfo = localtime ( &rawtime );
@@ -86,29 +85,26 @@ int write_log(ChatRequest chatRequest){
   		fclose(f);
   		return 1;
   	}else return 0;
-
 }
-
-int get_log(ChatRequest chatRequest,Log chatLog[]){
-  	char userNameSend[15];
+int get_max_log(ChatRequest chatRequest){
+	char userNameSend[15];
 	char userNameRecv[15];
 	char fileName[35];
+	Log chatLog;
   	FILE *f;
   	int userIndex,t,i=0;
 
-  	
   	userIndex =  findUserIndexWithSockFD(currentSockFD);
 	strcpy(userNameSend,userRegisted[userIndex].userName);
 	strcpy(userNameRecv,chatRequest.userNameReceiver);
   	t=find_file_name(userNameSend,userNameRecv,fileName);
-  	
   	while(1){
   		f=fopen(fileName,"rb");
   		if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
 			printf("\nfseek error");
 			break;
 		}
-		fread(&chatLog[i],sizeof(Log),1,f);
+		fread(&chatLog,sizeof(Log),1,f);
 		if(feof(f)){
 			break;
 		}else{
@@ -117,8 +113,39 @@ int get_log(ChatRequest chatRequest,Log chatLog[]){
 		}
   	}
   	return i;
-  	//printf("\n");
+}
+int get_log(ChatRequest chatRequest,char *buff,int i){
+  	char userNameSend[15];
+	char userNameRecv[15];
+	char fileName[35];
+  	FILE *f;
+  	int userIndex,t;
+  	Log chatLog;
 
+  	
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+	strcpy(userNameSend,userRegisted[userIndex].userName);
+	strcpy(userNameRecv,chatRequest.userNameReceiver);
+  	t=find_file_name(userNameSend,userNameRecv,fileName);
+  	f=fopen(fileName,"rb");
+	if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
+		printf("\nfseek error");
+		fclose(f);
+		return 0;
+	}
+	fread(&chatLog,sizeof(Log),1,f);
+	if(feof(f)){
+		fclose(f);
+		return 0;
+	}else{
+		fclose(f);
+		strcpy(buff,chatLog.time);
+		strcat(buff,"-");
+		strcat(buff,chatLog.userNameSend);
+		strcat(buff,"-");
+		strcat(buff,chatLog.constan);
+		return 1;
+	}
 }
 
 
@@ -390,59 +417,24 @@ void handleChatLogRequest(ChatRequest chatRequest){
 	int indexReceiver = -1;
 	ChatRespond chatRespond;
 	User user;
-	Log chatLog[1000];
+	Log chatLog;
 	int i=0,max_log;
 
-	
+	chatRespond.typeRespond=CHAT_RESPOND;
+	chatRespond.chatResult=CHAT_LOG_RESPOND;
+	strcpy(chatRespond.userNameSender,"");
+	max_log=get_max_log(chatRequest);
+	max_log--;
+	while(1){
+		if(i==10 || max_log<0) break;
+		if(get_log(chatRequest,chatRespond.messenger,max_log)==0) break;
+		printf("%s\n",chatRespond.messenger );
+		sendRespond(&chatRespond);
+		max_log--;
+		i++;
+	}
 
-	/*while(1){
-
-		if(get_log(chatRequest,chatLog,i)!=0){
-			strcpy(chatRespond.messenger,chatLog.time);
-			strcat(chatRespond.messenger,"-");
-			strcat(chatRespond.messenger,chatLog.userNameSend);
-			strcat(chatRespond.messenger,"-");
-			strcat(chatRespond.messenger,chatLog.constan);
-			sendRespond(&chatRespond);
-			printf("\nGui 1");
-			i++;
-		}else break;
-	}*/	
-		max_log=get_log(chatRequest,chatLog);
-		printf("\nAAAAAAA%s",chatLog[max_log-1].constan);
-		if(max_log<10){
-			printf("\nMax log <10");
-			while(i<max_log){
-				chatRespond.typeRespond== CHAT_RESPOND;
-				chatRespond.chatResult=CHAT_LOG_RESPOND;
-				strcpy(chatRespond.userNameSender,"");
-				//if(i==max_log) break;
-				strcpy(chatRespond.messenger,chatLog[i].time);
-				strcat(chatRespond.messenger,"-");
-				strcat(chatRespond.messenger,chatLog[i].userNameSend);
-				strcat(chatRespond.messenger,"-");
-				strcat(chatRespond.messenger,chatLog[i].constan);
-				sendRespond(&chatRespond);
-				i++;
-			}
-		}else{
-			printf("\nMax log >10");
-			i=9;
-			while(i>=0){
-				//if(i==-1) break;
-				chatRespond.typeRespond== CHAT_RESPOND;
-				chatRespond.chatResult=CHAT_LOG_RESPOND;
-				strcpy(chatRespond.userNameSender,"");
-				strcpy(chatRespond.messenger,chatLog[max_log-i].time);
-				strcat(chatRespond.messenger,"-");
-				strcat(chatRespond.messenger,chatLog[max_log-i].userNameSend);
-				strcat(chatRespond.messenger,"-");
-				strcat(chatRespond.messenger,chatLog[max_log-i].constan);
-				sendRespond(&chatRespond);
-				i--;
-			}
-		}
-		return;
+		
 }
 
 
