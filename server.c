@@ -21,7 +21,135 @@ int maxIndex;
 User userRegisted[OPEN_MAX];
 Room rooms[MAX_ROOM];
 
+int initConnect(const int PORT);
+int findUserIndexWithSockFD(int sockFD) ;
+int findUserIndex(char * userName, User* userRegisted, int numUserRegisted);
+void setCurrentSockFD(int sockFD);
+int readUsersFile(char * fileName);
+void writeUsersFile(char *fileName, User user);
+void makeUser(User* user, char* userName, char * password);
+int sendRespond(void * respond);
+int checkValidPassword(char* password);
+int checkValidUserName(char* userName);
+int addUser(User user, User userRegisted[], int numUserRegisted);
+int find_file_name(char* userNameSend, char* userNameRecv,char fileName[]);
+int write_log(ChatRequest chatRequest);
+int get_max_log(ChatRequest chatRequest);
+int get_log(ChatRequest chatRequest,char *buff,int i);
+void readBlockList(char blockList[100][50], int  * numUserBlock, char * _userName);
+void writeBlockList(char blockList[100][50], int numUserBlock, char* fileName);
+int checkUserExisted(char list[100][50], int numUserBlock, char* userName);
+void handeleBlockUserRequest(BlockUserRequest request);
+void handleUnblockUserRequest(BlockUserRequest request);
+void notifyChangeStatusAll(char* userName, UserStatus status);
+void setOnline(User* user);
+void setOffline(User* user);
+void handleClientDisconnect(int sockFD);
+int sendRegisterRespond(RegisterResult registerResult, char* messenger);
+void handleRegisterRequest(RegisterRequest registerRequest);
+int sendLoginRespond(LoginResult loginResult, char* messenger);
+void handleLoginRequest(LoginRequest loginRequest);
+void handleLogoutRequest();
+void handleChatLogRequest(ChatRequest chatRequest);
+void handleChatWithFriendRequest(ChatRequest chatRequest);
+void sendGetOnlineUserListRespond();
+void handleGetListOnlineUserRequest();
+int findRoomIndex(char* roomName, Room* rooms, int numRooms);
+void initRoom(Room* rooms, int numRooms);
+void handleGetRoomListRequest();
+int getIndexUserInRoom(Room room, char* userName);
+void removeUserInRoom(Room *room, int index);
+void sendRoomAll(char* userName, char * messenger, Room room, RoomResult roomResult);
+void handleRoomJoin(RoomRequest request);
+void handleChatRoomRequest(RoomRequest request);
+void handleRoomOut(char * roomName);
+void handleRoomRequest(RoomRequest request);
+void recognizeRequest(char* buff);
 
+
+int main() {
+	const int PORT = 5500;
+	int listenFD, clientFD, sockFD;
+	socklen_t clientLen ;
+	int nReady, i,  size;
+	struct sockaddr_in  clientAddr;
+	char buff[sizeof(Request)+1];
+
+	numUserRegisted = readUsersFile("data.txt");
+	for (i = 0; i < numUserRegisted; ++i) {
+		userRegisted[i].status = OFFLINE;
+	}
+
+	listenFD = initConnect(PORT);
+
+	clients[0].fd = listenFD;
+	clients[0].events = POLLRDNORM;
+	for (i = 1; i < OPEN_MAX; ++i) {
+		clients[i].fd = -1;
+	}
+
+	maxIndex = 0;
+
+	initRoom(rooms, MAX_ROOM);
+
+	while(1) {
+		nReady = poll(clients, maxIndex + 1, 0);
+		if (clients[0].revents & POLLRDNORM) {
+			clientLen = sizeof (clientAddr);
+			clientFD = accept(listenFD, (struct sockaddr *) &clientAddr, &clientLen);
+			printf("Client : %d connected", clientFD);
+			
+			for (i = 1; i < OPEN_MAX; ++i) {
+				if (clients[i].fd < 0) {
+					clients[i].fd = clientFD;
+					break;
+				}
+			}
+
+			if (i == OPEN_MAX) {
+				myERROR("Too many clients");
+			}
+			clients[i].events = POLLRDNORM;
+			if (i > maxIndex) {
+				maxIndex = i;
+			}
+			if (--nReady <= 0){
+				continue;
+			}
+		}
+
+		for (i = 1; i <= maxIndex; ++i) {
+			sockFD = clients[i].fd;
+			if (sockFD < 0) {
+				continue;
+			}
+			if (clients[i].revents & (POLLRDNORM | POLLWRNORM)) {
+					printf("Co hang\n");
+					setCurrentSockFD(sockFD);
+					size = recv(currentSockFD, buff, SIZE_BLOCK_REQUEST, 0);
+					buff[size]='\0';
+					if (size < 0) {
+						if (errno == ECONNRESET) {
+                      		handleClientDisconnect(currentSockFD);
+							clients[i].fd = -1;
+
+                   		} else {
+                   			printf("error_sys\n");
+                   			exit(0);
+                   		}
+                        	 
+					} else if (size == 0) {
+						handleClientDisconnect(currentSockFD);
+						clients[i].fd = -1;
+					} else {
+						printf("recognizeRequest\n");
+						recognizeRequest(buff);
+					}
+			}
+		}
+	}
+	return 0;
+}
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -395,8 +523,15 @@ void setOnline(User* user) {
 }
 
 void setOffline(User* user) {
+	int i = 0;
+
 	user->status = OFFLINE;
 	notifyChangeStatusAll(user->userName, OFFLINE);
+	for (i = 0; i < MAX_ROOM; ++i) {
+		if (getIndexUserInRoom(rooms[i], user->userName) != -1) {
+			handleRoomOut(rooms[i].roomName);
+		}
+	}
 }
 
 //read, write file
@@ -591,7 +726,7 @@ void handleChatWithFriendRequest(ChatRequest chatRequest) {
 	}
 }
 
-//-----------SEND USER ONLINE-------------------------------
+//----------------------SEND USER ONLINE---------------------------
 
 void sendGetOnlineUserListRespond() {
 	GetOnlineUserListRespond getOnlineUserListRespond;
@@ -720,6 +855,7 @@ void sendRoomAll(char* userName, char * messenger, Room room, RoomResult roomRes
 	}
 }
 
+
 void handleRoomJoin(RoomRequest request) {
 	int userIndex;
 	int roomIndex;
@@ -730,18 +866,29 @@ void handleRoomJoin(RoomRequest request) {
 	strcpy(respond.roomName,request.roomName);
 	userIndex = findUserIndexWithSockFD(currentSockFD);
 	roomIndex = findRoomIndex(request.roomName, rooms, MAX_ROOM);
+	numberUser = rooms[roomIndex].numberUser;
 	if (roomIndex == -1) {
-		printf("Room not existed!\n");
+		respond.roomResult  = JOIN_FALSE;
+		strcpy(respond.roomName, rooms[roomIndex].roomName);
+		strcpy(respond.messenger, "Room is not existed!");
+		sendRespond(&respond);
 		return ;
 	}
 
-	numberUser = rooms[roomIndex].numberUser;
 	if (numberUser > 10) {
 		respond.roomResult  = JOIN_FALSE;
 		strcpy(respond.roomName, rooms[roomIndex].roomName);
 		strcpy(respond.messenger, "Room is full!");
 		sendRespond(&respond);
 		return;
+	}
+
+	if (getIndexUserInRoom(rooms[roomIndex], userRegisted[userIndex].userName) != -1) {
+		respond.roomResult  = JOIN_FALSE;
+		strcpy(respond.roomName, rooms[roomIndex].roomName);
+		strcpy(respond.messenger, "you're in this room!");
+		sendRespond(&respond);
+		return;	
 	}
 
 	strcpy(rooms[roomIndex].userList[numberUser],userRegisted[userIndex].userName);
@@ -771,7 +918,7 @@ void handleChatRoomRequest(RoomRequest request) {
 	sendRoomAll(userRegisted[userIndex].userName, request.messenger, rooms[roomIndex], CHAT_ROOM);
 }
 
-void handleRoomOut(RoomRequest request) {
+void handleRoomOut(char * roomName) {
 	int userIndex;
 	int roomIndex;
 	int indexUserInRoom = -1;
@@ -780,9 +927,9 @@ void handleRoomOut(RoomRequest request) {
 
 
 	respond.typeRespond = ROOM_RESPOND;
-	strcpy(respond.roomName,request.roomName);
+	strcpy(respond.roomName,roomName);
 	userIndex = findUserIndexWithSockFD(currentSockFD);
-	roomIndex = findRoomIndex(request.roomName, rooms, MAX_ROOM);
+	roomIndex = findRoomIndex(roomName, rooms, MAX_ROOM);
 	if (roomIndex == -1) {
 		printf("Room not existed!\n");
 		return ;
@@ -811,7 +958,7 @@ void handleRoomRequest(RoomRequest request) {
 			break;
 
 		case OUT_ROOM:
-			handleRoomOut(request);
+			handleRoomOut(request.roomName);
 			break;
 
 		case CHAT_ROOM_REQUEST:
@@ -873,88 +1020,4 @@ void recognizeRequest(char* buff) {
 			break;
 
 	}
-}
-
-int main() {
-	const int PORT = 5500;
-	int listenFD, clientFD, sockFD;
-	socklen_t clientLen ;
-	int nReady, i,  size;
-	struct sockaddr_in  clientAddr;
-	char buff[sizeof(Request)+1];
-
-	numUserRegisted = readUsersFile("data.txt");
-	for (i = 0; i < numUserRegisted; ++i) {
-		userRegisted[i].status = OFFLINE;
-	}
-
-	listenFD = initConnect(PORT);
-
-	clients[0].fd = listenFD;
-	clients[0].events = POLLRDNORM;
-	for (i = 1; i < OPEN_MAX; ++i) {
-		clients[i].fd = -1;
-	}
-
-	maxIndex = 0;
-
-	initRoom(rooms, MAX_ROOM);
-
-	while(1) {
-		nReady = poll(clients, maxIndex + 1, 0);
-		if (clients[0].revents & POLLRDNORM) {
-			clientLen = sizeof (clientAddr);
-			clientFD = accept(listenFD, (struct sockaddr *) &clientAddr, &clientLen);
-			printf("Client : %d connected", clientFD);
-			
-			for (i = 1; i < OPEN_MAX; ++i) {
-				if (clients[i].fd < 0) {
-					clients[i].fd = clientFD;
-					break;
-				}
-			}
-
-			if (i == OPEN_MAX) {
-				myERROR("Too many clients");
-			}
-			clients[i].events = POLLRDNORM;
-			if (i > maxIndex) {
-				maxIndex = i;
-			}
-			if (--nReady <= 0){
-				continue;
-			}
-		}
-
-		for (i = 1; i <= maxIndex; ++i) {
-			sockFD = clients[i].fd;
-			if (sockFD < 0) {
-				continue;
-			}
-			if (clients[i].revents & (POLLRDNORM | POLLWRNORM)) {
-					printf("Co hang\n");
-					setCurrentSockFD(sockFD);
-					size = recv(currentSockFD, buff, SIZE_BLOCK_REQUEST, 0);
-					buff[size]='\0';
-					if (size < 0) {
-						if (errno == ECONNRESET) {
-                      		handleClientDisconnect(currentSockFD);
-							clients[i].fd = -1;
-
-                   		} else {
-                   			printf("error_sys\n");
-                   			exit(0);
-                   		}
-                        	 
-					} else if (size == 0) {
-						handleClientDisconnect(currentSockFD);
-						clients[i].fd = -1;
-					} else {
-						printf("recognizeRequest\n");
-						recognizeRequest(buff);
-					}
-			}
-		}
-	}
-	return 0;
 }
