@@ -219,7 +219,7 @@ void type_chat_respond(char buff[]){
 	}
 }
 
-void type_chat_room_respond(char buff[]){
+void type_room_respond(char buff[]){
 	RoomRespond roomRespond;
 
 	roomRespond=(*(RoomRespond*)buff);
@@ -256,6 +256,27 @@ void type_chat_room_respond(char buff[]){
 	}
 }
 
+void type_block_respond(char buff[]){
+	BlockUserRespond blockRespond;
+
+	blockRespond=(*(BlockUserRespond*)buff);
+	switch(blockRespond.blockResult){
+		case BLOCK_SUCCESS:
+			printf("\nSERV: %s",blockRespond.messenger);
+			break;
+		case BLOCK_USER_NOT_EXISTED:
+			printf("\nSERV: %s",blockRespond.messenger);
+			break;
+		case BLOCK_USER_BLOCKING:
+			printf("\nSERV: %s",blockRespond.messenger);
+			break;
+		case BLOCK_YOU:
+			printf("\nSERV: %s",blockRespond.messenger);
+			break;
+		default :
+			break;
+	}
+}
 void notification(char buff[]){
 	UserChangeStatusRespond statusRespond;
 
@@ -291,14 +312,13 @@ void check_respond(char mesg[]){
 			type_chat_respond(mesg);
 			break;
 		case ROOM_RESPOND:
-			type_chat_room_respond(mesg);
-			
+			type_room_respond(mesg);
 			break;
 		case BLOCK_RESPOND:
-				printf("\nBLOCK_RESPOND");
+			type_block_respond(mesg);
 			break;
 		case NOTIFICATION_RESPOND:
-				printf("\nNOTIFICATION_RESPOND");
+			printf("\nNOTIFICATION_RESPOND");
 			break;
 		case GET_ONLINE_USER_LIST_RESPOND:
 			t=take_user_list(mesg);
