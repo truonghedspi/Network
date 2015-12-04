@@ -78,10 +78,17 @@ typedef struct _GetRoomListRequest {
 
 
 //--------BLock Use-----------
+typedef enum{
+	BLOCK,
+	UNBLOCK,
+	BLOCK_LIST_REQUEST
+}BlockType;
+
 typedef struct _BlockUserRequest {
 	RequestType  typeRequest;
+	BlockType blockType;
 	char userName[50];
-	char data[150];
+	char data[146];
 }BlockUserRequest;
 
 
