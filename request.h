@@ -12,7 +12,8 @@ typedef enum {
 	CHAT_REQUEST,
 	ROOM_REQUEST,
 	GET_ONLINE_USER_LIST_REQUEST,
-	GET_ROOM_LIST_REQUEST
+	GET_ROOM_LIST_REQUEST,
+	BLOCK_USER_REQUEST
 }RequestType;
 
 typedef struct _Request {
@@ -75,6 +76,13 @@ typedef struct _GetRoomListRequest {
 	char data[200];
 }GetRoomListRequest;
 
+
+//--------BLock Use-----------
+typedef struct _BlockUserRequest {
+	RequestType  typeRequest;
+	char userName[50];
+	char data[150];
+}BlockUserRequest;
 
 
 #endif

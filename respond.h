@@ -15,7 +15,8 @@ typedef enum {
 	ROOM_RESPOND,
 	GET_ONLINE_USER_LIST_RESPOND,
 	USER_CHANGE_STATUS_RESPOND,
-	GET_ROOM_LIST_RESPOND
+	GET_ROOM_LIST_RESPOND,
+	BLOCK_USER_RESPOND
 }RespondType;
 
 
@@ -84,7 +85,8 @@ typedef enum {
 	CHAT_FRIEND_RECV,
 	CHAT_USER_OFFLINE,
 	CHAT_USER_NOT_EXISTED,
-	CHAT_LOG_RESPOND
+	CHAT_LOG_RESPOND,
+	CHAT_USER_BLOCK//nguoi dung da block
 }ChatResult;
 
 typedef struct _ChatRespond {
@@ -145,6 +147,18 @@ typedef struct _UserChangeStatusRespond {
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
+//----------------BLOCK USER----------------------------------
 
+typedef enum {
+	BLOCK_SUCCESS,
+	BLOCK_USER_NOT_EXISTED, //truong hop nhap ten khong dung
+	BLOCK_USER_BLOCKING//truong hop nguo do dang bi block r
+}BlockUserResult;
+
+typedef struct _BlockUserRespond {
+	RespondType typeRespond;
+	BlockUserResult blockResult;
+	char data[196];
+}BlockUserRespond;
 
 #endif
