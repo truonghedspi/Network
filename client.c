@@ -104,6 +104,7 @@ int get_pass(char pass[]){
 		pass[i]=getch();
 		if(pass[i] == '\n') break;
 		if(pass[i] == 127){
+			putchar(8);
 			i--;
 			continue;
 		}
