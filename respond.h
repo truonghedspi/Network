@@ -154,7 +154,11 @@ typedef enum {
 	BLOCK_SUCCESS,
 	BLOCK_USER_NOT_EXISTED, //truong hop nhap ten khong dung
 	BLOCK_USER_BLOCKING,//truong hop nguo do dang bi block r
-	BLOCK_YOU                 //truong gop block chinh no
+	BLOCK_YOU,                //truong gop block chinh no
+	UNBLOCK_SUCCESS,
+	UNBLOCK_USER_NOT_BLOCKED,
+	UNBLOCK_USER_NOT_EXISTED,
+	UNBLOCK_YOU
 }BlockUserResult;
 
 typedef struct _BlockUserRespond {

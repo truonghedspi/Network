@@ -190,6 +190,7 @@ int show_user_list(){
 int show_block_list(){
 	int i;
 
+	printf("\ntu dung vao day");
 	printf("\nYou Block %d User",numBlockList);
 	for ( i = 0; i < numBlockList; i++){
 		printf("\n%d.%s",i+1,blockList[i].userName);
@@ -351,9 +352,11 @@ void check_respond(char mesg[]){
 		case GET_ROOM_LIST_RESPOND:
 			take_room_list(mesg);
 			show_room_list();
+			break;
 		case GET_BLOCK_LIST_RESPOND:
 			take_block_list(mesg);
 			show_block_list();
+			break;
 		case USER_CHANGE_STATUS_RESPOND:
 			notification(mesg);
 			break;
@@ -381,6 +384,7 @@ int wait_char(char buff[LEN]){
 		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
 		if (FD_ISSET(fileno(stdin), &readSet)){
 			getString(buff);
+			fflush(stdin);
 			if(strcmp(buff,"q")==0) return 2;
 			else return 0;
 		}
@@ -403,6 +407,7 @@ int wait_char(char buff[LEN]){
 				check_respond(mesg);
 			}
 			format_string(buff);
+			fflush(stdin);
 			return 1;
 			/*if(--rv <= 0){
                 //continue;
@@ -947,6 +952,7 @@ void menu(){
 		fflush(stdout);
 		fflush(stdin);
 		choose=wait_int();
+		fflush(stdin);
 		if(choose > 0){
 				switch(choose){
 					case 1 :
@@ -1037,6 +1043,7 @@ void main(){
     	fflush(stdout);
     	fflush(stdin);
     	choose=wait_int();
+    	fflush(stdin);
     	if(choose>0){
     	    	switch(choose){
     	    		case 1: 
