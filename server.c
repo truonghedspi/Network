@@ -765,7 +765,7 @@ void handleChatWithFriendRequest(ChatRequest chatRequest) {
 	///////////////	
 		chatRespond.chatResult = CHAT_FRIEND_RECV;
 		strcpy(chatRespond.messenger, chatRequest.messenger);
-		strcpy(chatRespond.userNameSender,userRegisted[indexReceiver].userName);
+		strcpy(chatRespond.userNameSender,userRegisted[indexSender].userName);
 		setCurrentSockFD(userRegisted[indexReceiver].sockFD);	
 		sendRespond(&chatRespond);
 	
