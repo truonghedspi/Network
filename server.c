@@ -367,6 +367,10 @@ void handeleBlockUserRequest(BlockUserRequest request) {
 	writeBlockList(blockList, numUserBlock, fileName);
 }	
 
+ void handleUnblockUserRequest(BlockUserRequest request) {
+ 	
+ }
+
 //---------------------NOTIFY CHANGE STATUS------------------------------------------------
 void notifyChangeStatusAll(char* userName, UserStatus status) {
 	int i = 0;
@@ -859,7 +863,10 @@ void recognizeRequest(char* buff) {
 			break;
 		case BLOCK_USER_REQUEST:
 			blockUserRequest = *((BlockUserRequest* )buff);
-			handeleBlockUserRequest(blockUserRequest);
+			if (blockUserRequest.blockType == BLOCK)
+				handeleBlockUserRequest(blockUserRequest);
+			if (blockUserRequest.blockType == UNBLOCK)
+				handleUnblockUserRequest(blockUserRequest);
 			break;
 		default:
 			printf("Khong nhan dang \n");
