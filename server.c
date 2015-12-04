@@ -21,135 +21,7 @@ int maxIndex;
 User userRegisted[OPEN_MAX];
 Room rooms[MAX_ROOM];
 
-/////////////////////////////LOG/////////////////////////
-int find_file_name(char* userNameSend, char* userNameRecv,char fileName[]){
-	char fileName1[35];
-	char fileName2[35];
-	FILE *f;
 
-	strcpy(fileName1,"DataLog/");
-	strcpy(fileName2,"DataLog/");
-	strcat(fileName1,userNameSend);
-	strcat(fileName1,"_");
-	strcat(fileName1,userNameRecv);
-	strcat(fileName1,".dat");
-	strcat(fileName2,userNameRecv);
-	strcat(fileName2,"_");
-	strcat(fileName2,userNameSend);
-	strcat(fileName2,".dat");
-
-	f=fopen(fileName1,"rb");
-	if(f != NULL){
-		strcpy(fileName,fileName1);
-		fclose(f);
-		return 1;
-	}else {
-		f=fopen(fileName2,"rb");
-		if(f != NULL){
-			strcpy(fileName,fileName2);
-			fclose(f);
-			return 1;
-		}else{
-			strcpy(fileName,fileName1);
-			return 1;
-			
-		}
-	}
-	return 0;
-}
-int write_log(ChatRequest chatRequest){
-	char userNameSend[15];
-	char userNameRecv[15];
-	char fileName[35];
-	time_t rawtime;
-  	struct tm * timeinfo;
-  	Log chatLog;
-  	FILE *f;
-  	int userIndex,t;
-
-
-  	userIndex =  findUserIndexWithSockFD(currentSockFD);
-	strcpy(userNameSend,userRegisted[userIndex].userName);
-	strcpy(userNameRecv,chatRequest.userNameReceiver);
-	t=find_file_name(userNameSend,userNameRecv,fileName);
-  	if(t==1){
-  		f=fopen(fileName,"ab");
-  		fseek(f,0,SEEK_SET);
-  		time ( &rawtime );
-  	  	timeinfo = localtime ( &rawtime );
-  	  	strcpy(chatLog.time,asctime (timeinfo));
-  	  	chatLog.time[strlen(chatLog.time)-1]='\0';
-  		strcpy(chatLog.userNameSend,userNameSend);
-  		strcpy(chatLog.constan,chatRequest.messenger);
-  		fwrite(&chatLog,sizeof(Log),1,f);
-  		fclose(f);
-  		return 1;
-  	}else return 0;
-}
-int get_max_log(ChatRequest chatRequest){
-	char userNameSend[15];
-	char userNameRecv[15];
-	char fileName[35];
-	Log chatLog;
-  	FILE *f;
-  	int userIndex,t,i=0;
-
-  	userIndex =  findUserIndexWithSockFD(currentSockFD);
-	strcpy(userNameSend,userRegisted[userIndex].userName);
-	strcpy(userNameRecv,chatRequest.userNameReceiver);
-  	t=find_file_name(userNameSend,userNameRecv,fileName);
-  	while(1){
-  		f=fopen(fileName,"rb");
-  		if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
-			printf("\nfseek error");
-			break;
-		}
-		fread(&chatLog,sizeof(Log),1,f);
-		if(feof(f)){
-			break;
-		}else{
-			fclose(f);
-			i++;
-		}
-  	}
-  	return i;
-}
-int get_log(ChatRequest chatRequest,char *buff,int i){
-  	char userNameSend[15];
-	char userNameRecv[15];
-	char fileName[35];
-  	FILE *f;
-  	int userIndex,t;
-  	Log chatLog;
-
-  	
-  	userIndex =  findUserIndexWithSockFD(currentSockFD);
-	strcpy(userNameSend,userRegisted[userIndex].userName);
-	strcpy(userNameRecv,chatRequest.userNameReceiver);
-  	t=find_file_name(userNameSend,userNameRecv,fileName);
-  	f=fopen(fileName,"rb");
-	if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
-		printf("\nfseek error");
-		fclose(f);
-		return 0;
-	}
-	fread(&chatLog,sizeof(Log),1,f);
-	if(feof(f)){
-		fclose(f);
-		return 0;
-	}else{
-		fclose(f);
-		strcpy(buff,chatLog.time);
-		strcat(buff,"-");
-		strcat(buff,chatLog.userNameSend);
-		strcat(buff,"-");
-		strcat(buff,chatLog.constan);
-		return 1;
-	}
-}
-
-
-/////////////////////////////////////////////////////////////
 
 int initConnect(const int PORT) {
 	int sockFD;
@@ -269,7 +141,231 @@ int addUser(User user, User userRegisted[], int numUserRegisted) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////////////////LOG/////////////////////////
+int find_file_name(char* userNameSend, char* userNameRecv,char fileName[]){
+	char fileName1[35];
+	char fileName2[35];
+	FILE *f;
+
+	strcpy(fileName1,"DataLog/");
+	strcpy(fileName2,"DataLog/");
+	strcat(fileName1,userNameSend);
+	strcat(fileName1,"_");
+	strcat(fileName1,userNameRecv);
+	strcat(fileName1,".dat");
+	strcat(fileName2,userNameRecv);
+	strcat(fileName2,"_");
+	strcat(fileName2,userNameSend);
+	strcat(fileName2,".dat");
+
+	f=fopen(fileName1,"rb");
+	if(f != NULL){
+		strcpy(fileName,fileName1);
+		fclose(f);
+		return 1;
+	}else {
+		f=fopen(fileName2,"rb");
+		if(f != NULL){
+			strcpy(fileName,fileName2);
+			fclose(f);
+			return 1;
+		}else{
+			strcpy(fileName,fileName1);
+			return 1;
+			
+		}
+	}
+	return 0;
+}
+int write_log(ChatRequest chatRequest){
+	char userNameSend[15];
+	char userNameRecv[15];
+	char fileName[35];
+	time_t rawtime;
+  	struct tm * timeinfo;
+  	Log chatLog;
+  	FILE *f;
+  	int userIndex,t;
+
+
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+	strcpy(userNameSend,userRegisted[userIndex].userName);
+	strcpy(userNameRecv,chatRequest.userNameReceiver);
+	t=find_file_name(userNameSend,userNameRecv,fileName);
+  	if(t==1){
+  		f=fopen(fileName,"ab");
+  		fseek(f,0,SEEK_SET);
+  		time ( &rawtime );
+  	  	timeinfo = localtime ( &rawtime );
+  	  	strcpy(chatLog.time,asctime (timeinfo));
+  	  	chatLog.time[strlen(chatLog.time)-1]='\0';
+  		strcpy(chatLog.userNameSend,userNameSend);
+  		strcpy(chatLog.constan,chatRequest.messenger);
+  		fwrite(&chatLog,sizeof(Log),1,f);
+  		fclose(f);
+  		return 1;
+  	}else return 0;
+}
+int get_max_log(ChatRequest chatRequest){
+	char userNameSend[15];
+	char userNameRecv[15];
+	char fileName[35];
+	Log chatLog;
+  	FILE *f;
+  	int userIndex,i=0;
+
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+	strcpy(userNameSend,userRegisted[userIndex].userName);
+	strcpy(userNameRecv,chatRequest.userNameReceiver);
+  	find_file_name(userNameSend,userNameRecv,fileName);
+  	while(1){
+  		f=fopen(fileName,"rb");
+  		if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
+			printf("\nfseek error");
+			break;
+		}
+		fread(&chatLog,sizeof(Log),1,f);
+		if(feof(f)){
+			break;
+		}else{
+			fclose(f);
+			i++;
+		}
+  	}
+  	return i;
+}
+int get_log(ChatRequest chatRequest,char *buff,int i){
+  	char userNameSend[15];
+	char userNameRecv[15];
+	char fileName[35];
+  	FILE *f;
+  	int userIndex;
+  	Log chatLog;
+
+  	
+  	userIndex =  findUserIndexWithSockFD(currentSockFD);
+	strcpy(userNameSend,userRegisted[userIndex].userName);
+	strcpy(userNameRecv,chatRequest.userNameReceiver);
+  	find_file_name(userNameSend,userNameRecv,fileName);
+  	f = fopen(fileName,"rb");
+	if(fseek(f,i*sizeof(Log),SEEK_SET)==-1){
+		printf("\nfseek error");
+		fclose(f);
+		return 0;
+	}
+	fread(&chatLog,sizeof(Log),1,f);
+	if(feof(f)){
+		fclose(f);
+		return 0;
+	}else{
+		fclose(f);
+		strcpy(buff,chatLog.time);
+		strcat(buff,"-");
+		strcat(buff,chatLog.userNameSend);
+		strcat(buff,"-");
+		strcat(buff,chatLog.constan);
+		return 1;
+	}
+}
+
+
+//-----------------------------BLOCK-----------------------------------------------
+void readBlockList(char blockList[100][50], int  * numUserBlock, char * _userName) {
+	FILE *f;
+	char userName[50];
+	char fileName[50];
+
+	strcpy(fileName, _userName);
+	strcat(fileName, "_block.txt");
+
+	f = fopen(fileName, "r");
+	if (f == NULL) {
+		printf("File not existed!");
+		return ;
+	}
+
+	while(fscanf(f,"%s",userName) > 0) {
+		strcpy(blockList[*numUserBlock], userName);
+		++*numUserBlock;
+		fgetc(f);
+	}
+
+	fclose(f);
+}
+
+void writeBlockList(char blockList[100][50], int numUserBlock, char* fileName) {
+	FILE *f;
+	int i = 0;
+
+	f = fopen(fileName, "w");
+	if (f == NULL) {
+		printf("Not enought memory\n");
+		return;
+	}
+
+	for (i = 0; i < numUserBlock; ++i) {
+		fprintf(f, "%s\n", blockList[i]);
+		fputc(' ', f);
+	}
+
+	fclose(f);
+}
+
+int checkUserExisted(char list[100][50], int numUserBlock, char* userName) {
+	int i = 0;
+
+	for (i = 0; i < numUserBlock; ++i) {
+		if (strcmp(list[i], userName) == 0)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+void handeleBlockUserRequest(BlockUserRequest request) {
+	char fileName[50];
+	int userIndex = -1;
+	int userBlockIndex = -1;
+	int numUserBlock = 0;
+	char blockList[100][50];
+	BlockUserRespond respond;
+
+	respond.typeRespond = BLOCK_USER_RESPOND;
+	userIndex = findUserIndexWithSockFD(currentSockFD);
+
+	if (strcmp(userRegisted[userIndex].userName, request.blockUserName) == 0) {
+		respond.blockResult = BLOCK_YOU;
+		strcpy(respond.messenger, "You can not block you!");
+		sendRespond(&respond);
+		return;
+	}
+
+
+	readBlockList(blockList, &numUserBlock,userRegisted[userIndex].userName);
+
+	if (checkUserExisted(blockList, numUserBlock, request.blockUserName) == TRUE) {
+		respond.blockResult = BLOCK_USER_BLOCKING;
+		strcpy(respond.messenger, "User who you want block is exites!");
+		sendRespond(&respond);
+		return;
+	}
+
+	userBlockIndex = findUserIndex(request.blockUserName, userRegisted, numUserRegisted);
+
+	if (userBlockIndex == -1) {
+		respond.blockResult = BLOCK_USER_NOT_EXISTED;
+		strcpy(respond.messenger, "User you check is existed!");
+		sendRespond(&respond);
+		return;
+	}
+
+	respond.blockResult = BLOCK_SUCCESS;
+	sendRespond(&respond);
+	strcpy(blockList[numUserBlock], request.blockUserName);
+	++numUserBlock;
+	writeBlockList(blockList, numUserBlock, fileName);
+}	
 
 //---------------------NOTIFY CHANGE STATUS------------------------------------------------
 void notifyChangeStatusAll(char* userName, UserStatus status) {
@@ -416,11 +512,7 @@ void handleLogoutRequest() {
 ///---------------------CHAT FRIEND------------------------
 /////////////////////////chat log request//
 void handleChatLogRequest(ChatRequest chatRequest){
-	int indexSender = -1;
-	int indexReceiver = -1;
 	ChatRespond chatRespond;
-	User user;
-	Log chatLog;
 	int i=0,max_log;
 
 	chatRespond.typeRespond=CHAT_RESPOND;
@@ -436,8 +528,6 @@ void handleChatLogRequest(ChatRequest chatRequest){
 		max_log--;
 		i++;
 	}
-
-		
 }
 
 
@@ -447,26 +537,37 @@ void handleChatWithFriendRequest(ChatRequest chatRequest) {
 	int indexReceiver = -1;
 	ChatRespond chatRespond;
 	User user;
+	char blockList[100][50];
+	int numUserBlock = 0;
+
+	printf("Chat handle\n");
+	chatRespond.typeRespond = CHAT_RESPOND;
+	indexSender = findUserIndexWithSockFD(currentSockFD);
+	readBlockList(blockList, &numUserBlock, userRegisted[indexSender].userName);
+
 
 	if(chatRequest.chatType==CHAT_FRIEND_SEND){
-		printf("Chat handle\n");
-		chatRespond.typeRespond = CHAT_RESPOND;
-		indexSender = findUserIndexWithSockFD(currentSockFD);
 		strcpy(chatRespond.userNameSender, userRegisted[indexSender].userName);
-	
 		strcpy(user.userName, chatRequest.userNameReceiver);
 		indexReceiver = findUserIndex(user.userName, userRegisted, numUserRegisted);
+		if (checkUserExisted(blockList, numUserBlock, userRegisted[indexReceiver].userName) == TRUE) {
+			chatRespond.chatResult = CHAT_USER_BLOCK;
+			sendRespond(&chatRespond);
+			return;
+		}
 	
 		if (indexReceiver == -1) {
 			chatRespond.chatResult = CHAT_USER_NOT_EXISTED;
 			sendRespond(&chatRespond);
+			return;
 		}
 	
 		if (userRegisted[indexReceiver].status == OFFLINE) {
 			chatRespond.chatResult = CHAT_USER_OFFLINE;
 			sendRespond(&chatRespond);
+			return;
 		}
-	
+
 		chatRespond.chatResult = CHAT_SUCCESS;
 		sendRespond(&chatRespond);
 	
@@ -562,17 +663,14 @@ void initRoom(Room* rooms, int numRooms) {
 void handleGetRoomListRequest() {
 	GetRoomListRespond respond;
 	int i =0;
-	char roomList[10][15];
 
 	respond.typeRespond = GET_ROOM_LIST_RESPOND;
 	respond.roomNumber = MAX_ROOM;
 	for (i = 0; i < MAX_ROOM; i++) {
 		strcpy(respond.roomList[i], rooms[i].roomName);
-		//printf("%s\n",roomList[i] );
 		printf("%s\n",respond.roomList[i] );
 		respond.numberUser[i] = rooms[i].numberUser;
 	}
-	//memcpy(respond.roomList, roomList, 190);
 	sendRespond(&respond);
 }
 
@@ -598,8 +696,27 @@ void removeUserInRoom(Room *room, int index) {
 	--room->numberUser;
 }
 
+void sendRoomAll(char* userName, char * messenger, Room room, RoomResult roomResult) {
+	int i = 0;
+	int userIndex;
+	RoomRespond respond; 
+
+	respond.typeRespond = ROOM_RESPOND;
+	respond.roomResult = roomResult;
+	strcpy(respond.userName, userName);
+	strcpy(respond.messenger, messenger);
+	strcpy(respond.roomName, room.roomName);
+	for (i = 0; i < room.numberUser; ++i) {
+		userIndex = findUserIndex(room.userList[i], userRegisted, numUserRegisted);
+		if (strcmp(userName, room.userList[i]) == 0)
+			continue;
+
+		setCurrentSockFD(userRegisted[userIndex].sockFD);
+		sendRespond(&respond);
+	}
+}
+
 void handleRoomJoin(RoomRequest request) {
-	char roomName[15];
 	int userIndex;
 	int roomIndex;
 	int numberUser = -1;
@@ -631,26 +748,6 @@ void handleRoomJoin(RoomRequest request) {
 	sendRoomAll(userRegisted[userIndex].userName, "", rooms[roomIndex], USER_JOIN_ROOM);
 }
 
-void sendRoomAll(char* userName, char * messenger, Room room, RoomResult roomResult) {
-	int i = 0;
-	int userIndex;
-	RoomRespond respond; 
-
-	respond.typeRespond = ROOM_RESPOND;
-	respond.roomResult = roomResult;
-	strcpy(respond.userName, userName);
-	strcpy(respond.messenger, messenger);
-	strcpy(respond.roomName, room.roomName);
-	for (i = 0; i < room.numberUser; ++i) {
-		userIndex = findUserIndex(room.userList[i], userRegisted, numUserRegisted);
-		if (strcmp(userName, room.userList[i]) == 0)
-			continue;
-
-		setCurrentSockFD(userRegisted[userIndex].sockFD);
-		sendRespond(&respond);
-	}
-}
-
 void handleChatRoomRequest(RoomRequest request) {
 	int userIndex;
 	int roomIndex;
@@ -671,10 +768,8 @@ void handleChatRoomRequest(RoomRequest request) {
 }
 
 void handleRoomOut(RoomRequest request) {
-	char roomName[15];
 	int userIndex;
 	int roomIndex;
-	int numberUser = -1;
 	int indexUserInRoom = -1;
 	RoomRespond respond;
 
@@ -721,15 +816,14 @@ void handleRoomRequest(RoomRequest request) {
 	}
 }
 
+
 void recognizeRequest(char* buff) {
 	Request request;
 	LoginRequest loginRequest;
-	LogoutRequest logoutRequest;
 	RegisterRequest registerRequest;
 	ChatRequest chatRequest;
-	GetOnlineUserListRequest getOnlineUserListRequet;
-	GetRoomListRequest getRoomListRequest;
 	RoomRequest roomRequest;
+	BlockUserRequest blockUserRequest;
 
 	request = *((Request*) buff);
 	switch(request.typeRequest) {
@@ -753,7 +847,6 @@ void recognizeRequest(char* buff) {
 			break;
 
 		case GET_ONLINE_USER_LIST_REQUEST:
-			getOnlineUserListRequet = *((GetOnlineUserListRequest* )buff);
 			handleGetListOnlineUserRequest();
 			break;
 
@@ -763,6 +856,15 @@ void recognizeRequest(char* buff) {
 		case ROOM_REQUEST:
 			roomRequest = *((RoomRequest* )buff);
 			handleRoomRequest(roomRequest);
+			break;
+		case BLOCK_USER_REQUEST:
+			blockUserRequest = *((BlockUserRequest* )buff);
+			handeleBlockUserRequest(blockUserRequest);
+			break;
+		default:
+			printf("Khong nhan dang \n");
+			break;
+
 	}
 }
 

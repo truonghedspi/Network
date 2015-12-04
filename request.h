@@ -80,7 +80,7 @@ typedef struct _GetRoomListRequest {
 //--------BLock Use-----------
 typedef struct _BlockUserRequest {
 	RequestType  typeRequest;
-	char userName[50];
+	char blockUserName[50];
 	char data[150];
 }BlockUserRequest;
 

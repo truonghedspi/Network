@@ -152,13 +152,14 @@ typedef struct _UserChangeStatusRespond {
 typedef enum {
 	BLOCK_SUCCESS,
 	BLOCK_USER_NOT_EXISTED, //truong hop nhap ten khong dung
-	BLOCK_USER_BLOCKING//truong hop nguo do dang bi block r
+	BLOCK_USER_BLOCKING,//truong hop nguo do dang bi block r
+	BLOCK_YOU                 //truong gop block chinh no
 }BlockUserResult;
 
 typedef struct _BlockUserRespond {
 	RespondType typeRespond;
 	BlockUserResult blockResult;
-	char data[196];
+	char messenger[196];
 }BlockUserRespond;
 
 #endif
