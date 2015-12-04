@@ -331,7 +331,7 @@ void handeleBlockUserRequest(BlockUserRequest request) {
 	char blockList[100][50];
 	BlockUserRespond respond;
 
-	respond.typeRespond = BLOCK_USER_RESPOND;
+	respond.typeRespond = BLOCK_RESPOND;
 	userIndex = findUserIndexWithSockFD(currentSockFD);
 
 	if (strcmp(userRegisted[userIndex].userName, request.blockUserName) == 0) {
@@ -608,7 +608,7 @@ void sendGetOnlineUserListRespond() {
 		if (userRegisted[i].status == ONLINE) {
 			strcpy(onlineUserList[numUsersOnline], userRegisted[i].userName);
 			++numUsersOnline;
-			if (numUsersOnline == 10) {
+			if (numUsersOnline == 2) {
 				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
 				getOnlineUserListRespond.numUsersOnline = numUsersOnline;
 				if(i==(numUserRegisted-1)){
@@ -861,7 +861,7 @@ void recognizeRequest(char* buff) {
 			roomRequest = *((RoomRequest* )buff);
 			handleRoomRequest(roomRequest);
 			break;
-		case BLOCK_USER_REQUEST:
+		case BLOCK_REQUEST:
 			blockUserRequest = *((BlockUserRequest* )buff);
 			if (blockUserRequest.blockType == BLOCK)
 				handeleBlockUserRequest(blockUserRequest);
