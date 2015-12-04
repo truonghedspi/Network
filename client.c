@@ -19,8 +19,10 @@
 static struct termios old, new;
 int currentSockFD = -1;
 int numUsersOnline = 0;
+int numBlockList = 0;
 char currenUserName[LEN];
 char currenRoom[LEN];
+
 
 typedef enum{
 	USER,
@@ -29,10 +31,9 @@ typedef enum{
 
 typedef struct{
 	char userName[20];
-	TypeChatList type;
 }User_List;
-User_List chatList[100];
 User_List userList[100];
+User_List blockList[100];
 
 typedef struct{
 	char roomName[LEN];
@@ -147,10 +148,10 @@ int check_currRoom(){
 	return 0;
 }
 
-int check_currUserName(){
+int check_currUserName(char userName[]){
 	int i;
 	for( i=0;i<numUsersOnline;i++){
-		if(strcmp(userList[i].userName,currenUserName)==0)
+		if(strcmp(userList[i].userName,userName)==0)
 			return 1;
 	}
 	return 0;
@@ -237,26 +238,24 @@ void type_chat_room_respond(char buff[]){
 			break;
 	}
 }
-
+int sendRequest(void *request){
+	return send(currentSockFD,(char* )request,LEN,0);
+}
 void notification(char buff[]){
 	UserChangeStatusRespond statusRespond;
 
 	statusRespond=(*(UserChangeStatusRespond*)buff);
 	if(statusRespond.userStatus==ONLINE){
-		fflush(stdout);
 		printf("\nSERV: @%s vua online",statusRespond.userName);
 		add_partner(statusRespond.userName);
 		fflush(stdout);
 		printf("\n");
 	}else if(statusRespond.userStatus==OFFLINE){
-		fflush(stdout);
 		printf("\nSERV: @%s vua offline",statusRespond.userName);
 		del_partner(statusRespond.userName);
 		if(strcmp(statusRespond.userName,currenUserName)==0){
 			format_string(currenUserName);
 		}
-		fflush(stdout);
-		printf("\n");
 	}
 }
 
@@ -408,17 +407,14 @@ int wait_int(){
 	}	
 }
 
-//them doi tuong vao danh sach chatList
 int add_partner(char userName[]){
 	int i=0;
 
 	strcpy(userList[numUsersOnline].userName,userName);
 	numUsersOnline++;
-	//chatList[i].type=type;
 	return 1;
 }
 
-//xoa doi tuong khoi danh sach chatList
 int del_partner(char userName[]){
 	int i=0;
 
@@ -431,15 +427,13 @@ int del_partner(char userName[]){
 		while(1){
 			if(i == numUsersOnline)
 				break;
-			strcpy(chatList[i].userName,chatList[i+1].userName);
-			chatList[i].type = chatList[i+1].type;
+			strcpy(userList[i].userName,userList[i+1].userName);
 			i++;
 		}
-		strcpy(chatList[i].userName,"");
+		strcpy(userList[i].userName,"");
 		numUsersOnline--;
 		return 1;
 	}else if(i==numUsersOnline){
-		fflush(stdout);
 		printf("\ndel_partner ERROR" );
 		return 0;
 	}
@@ -589,14 +583,6 @@ int log_out(){
 	return 1;
 }
 
-int clear_user_list(){
-	int i;
-
-	for(i=0;i<100;i++){
-		strcpy(userList[i].userName,"");
-	}
-}
-
 int take_room_list(char mesg[]){
 	GetRoomListRespond roomListRespond;
 	int i;
@@ -608,6 +594,7 @@ int take_room_list(char mesg[]){
 	}
 	return 1;
 }
+
 int take_user_list(char mesg[]){
 	int i=0,y=0;
 	GetOnlineUserListRespond userListRespond;
@@ -633,29 +620,66 @@ int take_user_list(char mesg[]){
 	if(userListRespond.getListRespondResult == CONT) return 0;
 }
 
+int take_block_list(char mesg[]){
+	int i=0,y=0;
+	GetOnlineUserListRespond userListRespond;
+	
+	userListRespond=(*(GetOnlineUserListRespond*)mesg);
+	for(i=0;i<userListRespond.numUsersOnline;i++){
+		for (y = 0; y < numUsersOnline; y++) {
+			if (strcmp(userListRespond.onlineUserList[i], userList[y].userName) == 0) {
+				break;
+			}
+		}
+
+
+		//khong co thang nao ton tai
+
+		if(y == numUsersOnline) {
+			strcpy(userList[y].userName, userListRespond.onlineUserList[i]);
+			numUsersOnline++;
+		}
+	}
+	if(numUsersOnline == 0) return 2;
+	if(userListRespond.getListRespondResult == END) return 1;
+	if(userListRespond.getListRespondResult == CONT) return 0;
+}
+
+
 //gui yeu cau lay danh sach user online
 void online_user_list_request(){
-	GetOnlineUserListRequest	listRequest;
+	GetOnlineUserListRequest	request;
 	char mesg[LEN];
 
-	listRequest.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
-	memcpy(mesg,&listRequest,LEN);
-	send(currentSockFD,mesg,LEN,0);
+	request.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
+	sendRequest(&request);
+	/*memcpy(mesg,&listRequest,LEN);
+	send(currentSockFD,mesg,LEN,0);*/
 	return;
 }
+
 void room_list_request(){
-	RoomRequest roomRequest;
+	GetRoomListRequest request;
 	char mesg[LEN];
 
-	roomRequest.typeRequest=GET_ROOM_LIST_REQUEST;
-	memcpy(mesg,&roomRequest,LEN);
-	send(currentSockFD,mesg,LEN,0);
+	request.typeRequest=GET_ROOM_LIST_REQUEST;
+	sendRequest(&request);
+	/*memcpy(mesg,&roomRequest,LEN);
+	send(currentSockFD,mesg,LEN,0);*/
 	return;
 }
+
+void block_list_request(){
+	GetBlockListRequest request;
+
+	request.typeRequest=GET_BLOCK_LIST_REQUEST;
+	sendRequest(&request);
+	return ;
+}
+
 int out_room(){
 	send_chat_room("",OUT_ROOM);
 	format_string(currenRoom);
-
 }
 
 int choose_room(){
@@ -679,19 +703,20 @@ int choose_room(){
 	send_chat_room("",JOIN_ROOM);
 	return 1;
 }
+
 //chon user de chat
 int choose_user(){
 	char userName[LEN];
 	
 	while(1){
 		show_user_list();
-		printf("\nEnter User Name Want Chat With:");
+		printf("\nEnter User Name Want Chat With: ");
 		fflush(stdout);
 		wait_char(userName);
 		if(strcmp(userName,"q")==0) return 0;
 		if(strcmp(userName,"")!=0 ){
 			strcpy(currenUserName,userName);
-			if(check_currUserName()==1) break;
+			if(check_currUserName(currenUserName)==1) break;
 		}
 	}
 	return 1;	
@@ -722,7 +747,7 @@ int send_chat(char buff[],ChatType type){
 	int t;
 	char mesg[LEN];
 
-	t=check_currUserName();
+	t=check_currUserName(currenUserName);
 	if(t==1){
 		chatRequest.typeRequest=CHAT_REQUEST;
 		chatRequest.chatType=type;
@@ -744,7 +769,7 @@ void reply(){
 
 	strcpy(tempUserName,currenUserName);
 	choose_user();
-	if(check_currUserName()==1){
+	if(check_currUserName(currenUserName)==1){
 		printf("\nReply %s: ",currenUserName);
 		fflush(stdout);
 		wait_char(buff);
@@ -754,6 +779,27 @@ void reply(){
 	}
 	strcpy(currenUserName,tempUserName);
 }
+
+int blockUser(){
+	char username[LEN];
+	BlockUserRequest request;
+
+	request.typeRequest=BLOCK_USER_REQUEST;
+	request.blockType=BLOCK;
+	while(1){
+		show_user_list();
+		printf("\nEnter UserName Want Block: ");
+		fflush(stdout);
+		wait_char(username);
+		if(strcmp(userName,"q")==0) return 0;
+		if(check_currUserName(userName)==1){
+			strcpy(request.blockUserName,userName);
+			sendRequest(&request);
+			return 1;
+		}
+	}
+}
+
 
 int chatting_room(){
 	char buff[LEN];
@@ -836,7 +882,7 @@ void menu(){
 					case 2 :
 						printf("\nYou choose 2");
 						choose_user();
-						if(check_currUserName()==1){
+						if(check_currUserName(currenUserName)==1){
 							chatting();
 						}
 						break;
@@ -856,7 +902,7 @@ void menu(){
 						break;
 					case 5:
 						printf("\nYou choose 5");
-						if(check_currUserName()==1){
+						if(check_currUserName(currenUserName)==1){
 							chatting();
 						}
 						break;
