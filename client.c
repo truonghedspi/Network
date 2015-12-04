@@ -179,6 +179,7 @@ int show_user_list(){
 	int i;
 	
 	printf("\nHave %d User Is Online",numUsersOnline);
+	if(numUsersOnline==0) return 0;
 	for ( i = 0; i < numUsersOnline; i++){
 		printf("\n%d.%s",i+1,userList[i].userName);
 	}
@@ -262,6 +263,7 @@ void type_block_respond(char buff[]){
 	blockRespond=(*(BlockUserRespond*)buff);
 	switch(blockRespond.blockResult){
 		case BLOCK_SUCCESS:
+			online_user_list_request();
 			printf("\nSERV: %s",blockRespond.messenger);
 			break;
 		case BLOCK_USER_NOT_EXISTED:
@@ -752,17 +754,20 @@ int choose_room(){
 //chon user de chat
 int choose_user(){
 	char userName[LEN];
+	int t;
 	
 	while(1){
-		show_user_list();
-		printf("\nEnter User Name Want Chat With: ");
-		fflush(stdout);
-		wait_char(userName);
-		if(strcmp(userName,"q")==0) return 0;
-		if(strcmp(userName,"")!=0 ){
-			strcpy(currenUserName,userName);
-			if(check_currUserName(currenUserName)==1) break;
-		}
+		t=show_user_list();
+		if(t==1){
+			printf("\nEnter User Name Want Chat With: ");
+			fflush(stdout);
+			wait_char(userName);
+			if(strcmp(userName,"q")==0) return 0;
+			if(strcmp(userName,"")!=0 ){
+				strcpy(currenUserName,userName);
+				if(check_currUserName(currenUserName)==1) break;
+			}
+		}else return 0;
 	}
 	return 1;	
 }
@@ -828,21 +833,25 @@ void reply(){
 int block_user(){
 	char userName[LEN];
 	BlockUserRequest request;
+	int t;
 
 	request.typeRequest=BLOCK_REQUEST;
 	request.blockType=BLOCK;
 	while(1){
-		show_user_list();
-		printf("\nEnter UserName Want Block: ");
-		fflush(stdout);
-		wait_char(userName);
-		if(strcmp(userName,"q")==0) return 0;
-		if(check_currUserName(userName)==1){
-			strcpy(request.blockUserName,userName);
-			sendRequest(&request);
-			return 1;
-		}
+		t=show_user_list();
+		if(t==1){
+			printf("\nEnter UserName Want Block: ");
+			fflush(stdout);
+			wait_char(userName);
+			if(strcmp(userName,"q")==0) return 0;
+			if(check_currUserName(userName)==1){
+				strcpy(request.blockUserName,userName);
+				sendRequest(&request);
+				return 1;
+			}
+		}else return 0;
 	}
+	return 1;
 }
 
 int un_block_user(){
@@ -931,13 +940,12 @@ void menu(){
 		printf("\n4.CHOOSE ROOM");
 		printf("\n5.CHAT WITH CURREN USER");
 		printf("\n6.COMBACK ROOM");
-		printf("\n7.LOG OUT\n");
-		printf("\n8.BLOCK USER");
-		printf("\n9.UNBLOCK USER");
+		printf("\n7.BLOCK USER");
+		printf("\n8.UNBLOCK USER");
+		printf("\n9.LOG OUT\n");
 		fflush(stdout);
 		fflush(stdin);
 		choose=wait_int();
-		//wait_char(choose);
 		if(choose > 0){
 				switch(choose){
 					case 1 :
@@ -978,16 +986,16 @@ void menu(){
 							chatting_room();
 						}
 						break;
-					case 7 :
-						printf("\nYou choose 7");
-						log_out();
-						return ;
-					case 8 :
-						printf("\nYou choose 8");
-						block_user();
-						break;
 					case 9 :
 						printf("\nYou choose 9");
+						log_out();
+						return ;
+					case  7 :
+						printf("\nYou choose 7");
+						block_user();
+						break;
+					case 8 :
+						printf("\nYou choose 8");
 						un_block_user();
 						break;
 					default :
@@ -1028,7 +1036,6 @@ void main(){
     	fflush(stdout);
     	fflush(stdin);
     	choose=wait_int();
-    	//wait_char(choose);
     	if(choose>0){
     	    	switch(choose){
     	    		case 1: 

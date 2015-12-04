@@ -2,3 +2,4 @@
 -khi 1 user out room, chua thong bao cho cac user con lai
 -chua test dc neu ser gui nhieu lan userlistonline(da oke)
 -A block B, nhung khi A yeu cau hien thi danh sach online van nhin thay B, va B van nhin thay A. A k the chat dc voi B nhung B chat dc voi A
+-A gui tin cho B, nhung khi sang den B thi ten nguoi gui lai la B
