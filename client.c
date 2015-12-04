@@ -179,6 +179,7 @@ int show_room_list(){
 int show_user_list(){
 	int i;
 	
+	if(numUsersOnline == 0) return 0;
 	printf("\nHave %d User Is Online",numUsersOnline);
 	if(numUsersOnline==0) return 0;
 	for ( i = 0; i < numUsersOnline; i++){
@@ -190,7 +191,7 @@ int show_user_list(){
 int show_block_list(){
 	int i;
 
-	printf("\ntu dung vao day");
+	if(numBlockList==0) return 0;
 	printf("\nYou Block %d User",numBlockList);
 	for ( i = 0; i < numBlockList; i++){
 		printf("\n%d.%s",i+1,blockList[i].userName);
@@ -867,16 +868,17 @@ int un_block_user(){
 	request.typeRequest=BLOCK_REQUEST;
 	request.blockType=UNBLOCK;
 	while(1){
-		show_block_list();
-		printf("\nEnter UserName Want UnBlock: ");
-		fflush(stdout);
-		wait_char(userName);
-		if(strcmp(userName,"q")==0) return 0;
-		if(check_currUserName(userName)==1){
-			strcpy(request.blockUserName,userName);
-			sendRequest(&request);
-			return 1;
-		}
+		if(show_block_list()==1){
+			printf("\nEnter UserName Want UnBlock: ");
+			fflush(stdout);
+			wait_char(userName);
+			if(strcmp(userName,"q")==0) return 0;
+			if(check_currUserName(userName)==1){
+				strcpy(request.blockUserName,userName);
+				sendRequest(&request);
+				return 1;
+			}
+		}else return 0;
 	}
 }
 
