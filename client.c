@@ -325,21 +325,22 @@ int wait_char(char buff[LEN]){
 		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
 		if (FD_ISSET(fileno(stdin), &readSet)){
 			getString(buff);
-			return 0;
+			if(strcmp(buff,"q")==0) return 2;
+			else return 0;
 		}
 		if(FD_ISSET(currentSockFD, &readSet)){
 			strcpy(mesg,"");
 			size_recv = recv(currentSockFD,mesg,LEN,0);
 			if(size_recv == 0){
-				fflush(stdout);
 				printf("\nServer disconnect\n");
 				close(currentSockFD);
+				//return 0;
 				exit(0);
 			}
 			if (size_recv < 0) {
-				fflush(stdout);
 				printf("Error\n");
 				close(currentSockFD);
+				//return 0;
 				exit(0);
 			}
 			if(size_recv > 0){
@@ -382,15 +383,15 @@ int wait_int(){
 			strcpy(mesg,"");
 			size_recv = recv(currentSockFD,mesg,LEN,0);
 			if(size_recv == 0){
-				fflush(stdout);
 				printf("\nServer disconnect\n");
 				close(currentSockFD);
+				//return 0;
 				exit(0);
 			}
 			if (size_recv < 0) {
-				fflush(stdout);
 				printf("Error\n");
 				close(currentSockFD);
+				//return 0;
 				exit(0);
 			}
 			if(size_recv > 0){
@@ -406,6 +407,7 @@ int wait_int(){
 		 
 	}	
 }
+
 //them doi tuong vao danh sach chatList
 int add_partner(char userName[]){
 	int i=0;
@@ -735,6 +737,24 @@ int send_chat(char buff[],ChatType type){
 		return 0;
 	}
 }
+
+void reply(){
+	char tempUserName[LEN];
+	char buff[LEN];
+
+	strcpy(tempUserName,currenUserName);
+	choose_user();
+	if(check_currUserName()==1){
+		printf("\nReply %s: ",currenUserName);
+		fflush(stdout);
+		wait_char(buff);
+		if(strcmp(buff,"")!=0){
+			send_chat(buff,CHAT_FRIEND_SEND);
+		}
+	}
+	strcpy(currenUserName,tempUserName);
+}
+
 int chatting_room(){
 	char buff[LEN];
 
@@ -748,7 +768,7 @@ int chatting_room(){
 					return 1;
 				}else
 				if(strcmp(buff,"\\r")==0 || strcmp(buff,"\\R")==0){
-		
+					reply();
 				}else
 				if(strcmp(buff,"\\l")==0 || strcmp(buff,"\\L")==0){
 		
@@ -761,6 +781,7 @@ int chatting_room(){
 			}
 	}while(1);
 }
+
 
 int chatting(){
 	char buff[LEN];
@@ -776,10 +797,7 @@ int chatting(){
 					return 1;
 				}else
 				if(strcmp(buff,"\\r")==0 || strcmp(buff,"\\R")==0){
-		
-				}else
-				if(strcmp(buff,"\\l")==0 || strcmp(buff,"\\L")==0){
-		
+					reply();
 				}else
 				if(strcmp(buff,"\\h")==0 || strcmp(buff,"\\H")==0){
 					send_chat(buff,CHAT_LOG_REQUEST);
@@ -789,8 +807,6 @@ int chatting(){
 			}
 	}while(1);
 }
-
-
 
 void menu(){
 
@@ -803,10 +819,14 @@ void menu(){
 		printf("\n2.CHAT WITH");
 		printf("\n3.SHOW ROOM LIST");
 		printf("\n4.CHOOSE ROOM");
-		printf("\n5.EXIT\n");
+		printf("\n5.CHAT WITH CURREN USER");
+		printf("\n6.COMBACK ROOM");
+		printf("\n7.LOG OUT\n");
 		fflush(stdout);
+		fflush(stdin);
 		choose=wait_int();
-		if(choose>0){
+		//wait_char(choose);
+		if(choose > 0){
 				switch(choose){
 					case 1 :
 						printf("\nYou choose 1");
@@ -834,15 +854,27 @@ void menu(){
 							printf("\nCurrenRoom NULL, please choose room!");
 						}
 						break;
-					case 5 :
+					case 5:
 						printf("\nYou choose 5");
+						if(check_currUserName()==1){
+							chatting();
+						}
+						break;
+					case 6:
+						printf("\nYou choose 6");
+						if(check_currRoom()==1){
+							chatting_room();
+						}
+						break;
+					case 7 :
+						printf("\nYou choose 7");
 						log_out();
-						return;
+						return ;
 					default :
 						break;
 				}
 			}
-	}while(choose!=5);
+	}while(1);
 
 }
 
@@ -874,7 +906,9 @@ void main(){
 		printf("\n3.EXIT");
 		printf("\nChoose: ");
     	fflush(stdout);
+    	fflush(stdin);
     	choose=wait_int();
+    	//wait_char(choose);
     	if(choose>0){
     	    	switch(choose){
     	    		case 1: 
