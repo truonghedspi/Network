@@ -142,12 +142,12 @@ int check_type(Respond respond){
 	return respond.typeRespond;
 }
 
-int check_currRoom(){
+int check_currRoom(char roomName[]){
 	int i;
 
-	if(strcmp(currenRoom,"")==0) return 0;
+	if(strcmp(roomName,"")==0) return 0;
 	for( i=0;i<10;i++){
-		if(strcmp(roomList[i].roomName,currenRoom)==0)
+		if(strcmp(roomList[i].roomName,roomName)==0)
 			return 1;
 	}
 	return 0;
@@ -164,7 +164,7 @@ int check_currUserName(char userName[]){
 	return 0;
 }
 
-int sendRequest(void *request){
+int send_request(void *request){
 	return send(currentSockFD,(char* )request,LEN,0);
 }
 
@@ -230,33 +230,41 @@ void type_room_respond(char buff[]){
 	switch(roomRespond.roomResult){
 		case CHAT_ROOM:
 			printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
-			break;
+			return;
 		case JOIN_SUCCESS:
 			printf("\nJoin #%s success",roomRespond.roomName);
-			break;
+			strcpy(currenRoom,roomRespond.roomName);
+			chatting_room();
+			return;
 		case USER_JOIN_ROOM :
 			printf("\n#%s: User %s Join room! ",roomRespond.roomName,roomRespond.userName);
-			break;
+			return;
 		case USER_OUT_ROOM:
-			printf("\n#%s: User %s Join room! ",roomRespond.roomName,roomRespond.userName);
-			break;
+			printf("\n#%s: User %s Out room! ",roomRespond.roomName,roomRespond.userName);
+			return;
 		case JOIN_FALSE:
-			format_string(currenRoom);
-			printf("\nJOIN FALSE");
-			break;
+			printf("\nSERV(JOIN_FALSE): %s",roomRespond.messenger);
+			strcpy(currenRoom,roomRespond.roomName);
+			chatting_room();
+			return;
 		case OUT_SUCCESS:
-			format_string(currenRoom);
-			printf("\nOUT SUCCESS");
+			if(strcmp(roomRespond.roomName,currenRoom)==0){
+				format_string(currenRoom);
+			}
+			printf("\nSERV(OUT_SUCCESS): %s",roomRespond.messenger);
 			//printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
-			break;
+			return;
 		case OUT_FALSE:
-			break;
+			
+			return;
 		case CHAT_ROOM_SUCCESS:
-			break;
+			//printf("\nSERV: %s",roomRespond.messenger);
+			return;
 		case CHAT_ROOM_FALSE:
-			break;
+			//printf("\nSERV: %s",roomRespond.messenger);
+			return;
 		default :
-			break;
+			return;
 	}
 }
 
@@ -265,7 +273,7 @@ void online_user_list_request(){
 	char mesg[LEN];
 
 	request.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
-	sendRequest(&request);
+	send_request(&request);
 	return;
 }
 
@@ -276,16 +284,16 @@ void type_block_respond(char buff[]){
 	switch(blockRespond.blockResult){
 		case BLOCK_SUCCESS:
 			online_user_list_request();
-			printf("\nSERV: %s",blockRespond.messenger);
+			printf("\nSERV(BLOCK_SUCCESS): %s",blockRespond.messenger);
 			break;
 		case BLOCK_USER_NOT_EXISTED:
-			printf("\nSERV: %s",blockRespond.messenger);
+			printf("\nSERV(BLOCK_USER_NOT_EXISTED): %s",blockRespond.messenger);
 			break;
 		case BLOCK_USER_BLOCKING:
-			printf("\nSERV: %s",blockRespond.messenger);
+			printf("\nSERV(BLOCK_USER_BLOCKING): %s",blockRespond.messenger);
 			break;
 		case BLOCK_YOU:
-			printf("\nSERV: %s",blockRespond.messenger);
+			printf("\nSERV(BLOCK_YOU): %s",blockRespond.messenger);
 			break;
 		default :
 			break;
@@ -340,14 +348,11 @@ void check_respond(char mesg[]){
 				show_user_list();
 			}
 			else if(t == 0){
-				fflush(stdout);
 			 	printf("\nRECEIVING LIST...");
-			 }
+			}
 			else if(t == 2){
-				fflush(stdout);
 			 	printf("\nNO OTHER USER IS ONLINE!");
-			 }
-			fflush(stdout);
+			}
 			printf("\n");
 			break;
 		case GET_ROOM_LIST_RESPOND:
@@ -393,7 +398,7 @@ int wait_char(char buff[LEN]){
 			strcpy(mesg,"");
 			size_recv = recv(currentSockFD,mesg,LEN,0);
 			if(size_recv == 0){
-				printf("\nServer disconnect\n");
+				printf("\nServer Disconnect\n");
 				close(currentSockFD);
 				//return 0;
 				exit(0);
@@ -480,7 +485,7 @@ int add_partner(char userName[]){
 
 int del_partner(char userName[]){
 	int i=0;
-
+	printf("\n%d",numUsersOnline);
 	for(i=0;i<numUsersOnline;i++){
 		if(strcmp(userList[i].userName,userName)==0){
 			break;
@@ -538,16 +543,16 @@ int login(){
 	if(check_type(respond) == LOGIN_RESPOND){
 		loginRespond=(*(LoginRespond*)mesg);
 		if(loginRespond.loginResult == LOGIN_SUCCESS){
-			printf("\n%s",loginRespond.messenger);
+			printf("\n%s\n",loginRespond.messenger);
 			return 1;
 		}else if(loginRespond.loginResult == LOGIN_INVALID_USERNAME){
-			printf("\n%s",loginRespond.messenger);
+			printf("\n%s\n",loginRespond.messenger);
 			return 0;
 		}else if(loginRespond.loginResult == LOGIN_INVALID_PASSWORD){
-			printf("\n%s",loginRespond.messenger);
+			printf("\n%s\n",loginRespond.messenger);
 			return 0;
 		}else if(loginRespond.loginResult == LOGIN_ONLINING){
-			printf("\n%s",loginRespond.messenger);
+			printf("\n%s\n",loginRespond.messenger);
 			return 0;
 		}
 
@@ -717,7 +722,7 @@ void room_list_request(){
 	char mesg[LEN];
 
 	request.typeRequest=GET_ROOM_LIST_REQUEST;
-	sendRequest(&request);
+	send_request(&request);
 	/*memcpy(mesg,&roomRequest,LEN);
 	send(currentSockFD,mesg,LEN,0);*/
 	return;
@@ -727,12 +732,18 @@ void block_list_request(){
 	GetBlockListRequest request;
 
 	request.typeRequest=GET_BLOCK_LIST_REQUEST;
-	sendRequest(&request);
+	send_request(&request);
 	return ;
 }
 
 int out_room(){
-	send_chat_room("",OUT_ROOM);
+	RoomRequest roomRequest;
+
+	roomRequest.typeRequest=ROOM_REQUEST;
+	roomRequest.roomType=OUT_ROOM;
+	strcpy(roomRequest.roomName,currenRoom);
+	send_request(&roomRequest);
+	//send_chat_room("",OUT_ROOM);
 	format_string(currenRoom);
 }
 
@@ -740,9 +751,11 @@ int choose_room(){
 	char roomName[LEN];
 	RoomRequest roomRequest;
 	
-	if(check_currRoom()==1){
-		out_room();
-	}
+	//if(check_currRoom()==1){
+	//	out_room();
+	//}
+	roomRequest.typeRequest=ROOM_REQUEST;
+	roomRequest.roomType=JOIN_ROOM;
 	while(1){
 		show_room_list();
 		printf("\nEnter Room Name Want Join:");
@@ -750,11 +763,13 @@ int choose_room(){
 		wait_char(roomName);
 		if(strcmp(roomName,"q")==0) return 0;
 		if(strcmp(roomName,"")!=0 ){
-			strcpy(currenRoom,roomName);
-			if(check_currRoom()==1) break;
+			//strcpy(currenRoom,roomName);
+			if(check_currRoom(roomName)==1) break;
 		}
 	}
-	send_chat_room("",JOIN_ROOM);
+	strcpy(roomRequest.roomName,roomName);
+	send_request(&roomRequest);
+	//send_chat_room("",JOIN_ROOM);
 	return 1;
 }
 
@@ -785,7 +800,7 @@ int send_chat_room(char buff[],RoomType type){
 	int t;
 	char mesg[LEN];
 
-	t=check_currRoom();
+	t=check_currRoom(currenRoom);
 	if(t==1){
 		roomRequest.typeRequest=ROOM_REQUEST;
 		roomRequest.roomType=type;
@@ -810,11 +825,11 @@ int send_chat(char buff[],ChatType type){
 		chatRequest.chatType=type;
 		strcpy(chatRequest.userNameReceiver,currenUserName);
 		strcpy(chatRequest.messenger,buff);
-		memcpy(mesg,&chatRequest,LEN);
-		send(currentSockFD,mesg,LEN,0);
+		send_request(&chatRequest);
+		/*memcpy(mesg,&chatRequest,LEN);
+		send(currentSockFD,mesg,LEN,0);*/
 		return 1;
 	}else if(t==0){
-		fflush(stdout);
 		printf("\nCurrenUserName NULL");
 		return 0;
 	}
@@ -853,7 +868,7 @@ int block_user(){
 			if(strcmp(userName,"q")==0) return 0;
 			if(check_currUserName(userName)==1){
 				strcpy(request.blockUserName,userName);
-				sendRequest(&request);
+				send_request(&request);
 				return 1;
 			}
 		}else return 0;
@@ -875,7 +890,7 @@ int un_block_user(){
 			if(strcmp(userName,"q")==0) return 0;
 			if(check_currUserName(userName)==1){
 				strcpy(request.blockUserName,userName);
-				sendRequest(&request);
+				send_request(&request);
 				return 1;
 			}
 		}else return 0;
@@ -956,61 +971,61 @@ void menu(){
 		choose=wait_int();
 		fflush(stdin);
 		if(choose > 0){
-				switch(choose){
-					case 1 :
-						printf("\nYou choose 1");
-						online_user_list_request();
-						
-						break;
-					case 2 :
-						printf("\nYou choose 2");
-						choose_user();
-						if(check_currUserName(currenUserName)==1){
-							chatting();
-						}
-						break;
-					case 3 :
-						printf("\nYou choose 3");
-						room_list_request();
-						
-						break ;
-					case 4:
-						printf("\nYou choose 4");
-						choose_room();
-						if(check_currRoom()==1){
-							chatting_room();
-						}else{
-							printf("\nCurrenRoom NULL, please choose room!");
-						}
-						break;
-					case 5:
-						printf("\nYou choose 5");
-						if(check_currUserName(currenUserName)==1){
-							chatting();
-						}
-						break;
-					case 6:
-						printf("\nYou choose 6");
-						if(check_currRoom()==1){
-							chatting_room();
-						}
-						break;
-					case 9 :
-						printf("\nYou choose 9");
-						log_out();
-						return ;
-					case  7 :
-						printf("\nYou choose 7");
-						block_user();
-						break;
-					case 8 :
-						printf("\nYou choose 8");
-						un_block_user();
-						break;
-					default :
-						break;
-				}
+			switch(choose){
+				case 1 :
+					printf("\nYou choose 1");
+					online_user_list_request();
+					
+					break;
+				case 2 :
+					printf("\nYou choose 2");
+					choose_user();
+					if(check_currUserName(currenUserName)==1){
+						chatting();
+					}
+					break;
+				case 3 :
+					printf("\nYou choose 3");
+					room_list_request();
+					
+					break ;
+				case 4:
+					printf("\nYou choose 4");
+					choose_room();
+					/*if(check_currRoom(currenRoom)==1){
+						chatting_room();
+					}else{
+						printf("\nCurrenRoom NULL, please choose room!");
+					}*/
+					break;
+				case 5:
+					printf("\nYou choose 5");
+					if(check_currUserName(currenUserName)==1){
+						chatting();
+					}
+					break;
+				case 6:
+					printf("\nYou choose 6");
+					if(check_currRoom(currenRoom)==1){
+						chatting_room();
+					}
+					break;
+				case 9 :
+					printf("\nYou choose 9");
+					log_out();
+					return ;
+				case  7 :
+					printf("\nYou choose 7");
+					block_user();
+					break;
+				case 8 :
+					printf("\nYou choose 8");
+					un_block_user();
+					break;
+				default :
+					break;
 			}
+		}
 	}while(1);
 
 }

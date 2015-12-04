@@ -874,7 +874,7 @@ int findIndexUserInRoom(Room room, char* userName) {
 	int userIndex = -1;
 
 	for (userIndex = 0; userIndex < room.numberUser; ++userIndex) {
-		if (strcmp(room.userList[userIndex], userName))
+		if (strcmp(room.userList[userIndex], userName)==0)
 			return userIndex;
 	}
 
