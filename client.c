@@ -160,6 +160,7 @@ int check_currUserName(char userName[]){
 		if(strcmp(userList[i].userName,userName)==0)
 			return 1;
 	}
+	format_string(userName);
 	return 0;
 }
 
@@ -255,6 +256,15 @@ void type_room_respond(char buff[]){
 		default :
 			break;
 	}
+}
+
+void online_user_list_request(){
+	GetOnlineUserListRequest	request;
+	char mesg[LEN];
+
+	request.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
+	sendRequest(&request);
+	return;
 }
 
 void type_block_respond(char buff[]){
@@ -694,16 +704,7 @@ int take_block_list(char mesg[]){
 
 
 //gui yeu cau lay danh sach user online
-void online_user_list_request(){
-	GetOnlineUserListRequest	request;
-	char mesg[LEN];
 
-	request.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
-	sendRequest(&request);
-	/*memcpy(mesg,&listRequest,LEN);
-	send(currentSockFD,mesg,LEN,0);*/
-	return;
-}
 
 void room_list_request(){
 	GetRoomListRequest request;

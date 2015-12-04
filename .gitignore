@@ -7,3 +7,4 @@ hatest
 hatest.c
 *.o
 score.h
+*_block.txt
