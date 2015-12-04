@@ -407,7 +407,10 @@ void handleLoginRequest(LoginRequest loginRequest) {
 //--------------------------------------------------------------------------
 
 void handleLogoutRequest() {
-	handleClientDisconnect(currentSockFD);
+	int userIndex = -1;
+
+	userIndex = findUserIndexWithSockFD(currentSockFD);
+	setOffline(&userRegisted[userIndex]);
 }
 
 ///---------------------CHAT FRIEND------------------------
@@ -529,7 +532,7 @@ int findRoomIndex(char* roomName, Room* rooms, int numRooms) {
 
 	for (i = 0; i < numRooms; ++i) {
 		if (strcmp(roomName, rooms[i].roomName) == 0)
-			return 1;
+			return i;
 	}
 
 	return -1;
