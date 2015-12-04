@@ -491,13 +491,19 @@ void handeleBlockUserRequest(BlockUserRequest request) {
 
 	respond.blockResult = BLOCK_SUCCESS;
 	sendRespond(&respond);
+
 	strcpy(blockList[numUserBlock], request.blockUserName);
 	++numUserBlock;
 	writeBlockList(blockList, numUserBlock, userRegisted[userIndex].userName);
+
+	readBlockList(blockList, &numUserBlock, request.blockUserName);
+	strcpy(blockList[numUserBlock], request.blockUserName);
+	++numUserBlock;
+	writeBlockList(blockList, numUserBlock, request.blockUserName);
 }	
 
 void handleUnblockUserRequest(BlockUserRequest request) {
- 	char userList[100][50];
+ 	char blockList[100][50];
  	int numUserBlock = 0;
  	int indexInBlockList = -1;
  	int i = 0;
@@ -506,8 +512,8 @@ void handleUnblockUserRequest(BlockUserRequest request) {
 
  	respond.typeRespond = BLOCK_RESPOND;
  	userIndex = findUserIndexWithSockFD(currentSockFD);
- 	readBlockList(userList, &numUserBlock, userRegisted[userIndex].userName);
- 	indexInBlockList = findUserIndexInBlockList(userList, numUserBlock, request.blockUserName);
+ 	readBlockList(blockList, &numUserBlock, userRegisted[userIndex].userName);
+ 	indexInBlockList = findUserIndexInBlockList(blockList, numUserBlock, request.blockUserName);
 
  	//thang block chua dang ky
  	if (findUserIndex(request.blockUserName, userRegisted, numUserRegisted) == -1) {
@@ -536,10 +542,10 @@ void handleUnblockUserRequest(BlockUserRequest request) {
  	sendRespond(&respond);
 
  	for (i = indexInBlockList; i < numUserBlock - 1; ++i) {
- 		strcpy(userList[i], userList[i+1]);
+ 		strcpy(blockList[i], blockList[i+1]);
  	}
  	--numUserBlock;
- 	writeBlockList(userList, numUserBlock, userRegisted[userIndex].userName);
+ 	writeBlockList(blockList, numUserBlock, userRegisted[userIndex].userName);
  }
 
 //---------------------NOTIFY CHANGE STATUS------------------------------------------------
@@ -776,11 +782,19 @@ void sendGetOnlineUserListRespond() {
 	int i = 0;
 	char onlineUserList[10][19];
 	int numUsersOnline = 0;
+	char blockList[100][50];
+	int numUserBlock = 0;
+	int userIndex = -1;
 
 	getOnlineUserListRespond.numUsersOnline = 0;
 	getOnlineUserListRespond.typeRespond = GET_ONLINE_USER_LIST_RESPOND;
-	
+	userIndex = findUserIndexWithSockFD(currentSockFD);
+	readBlockList(blockList, &numUserBlock, userRegisted[userIndex].userName);
+
 	for (i = 0; i < numUserRegisted; ++i) {
+		//--neu thang do trong block list thi next
+		if (findUserIndexInBlockList(blockList, numUserBlock, userRegisted[i].userName) != -1)
+			continue;
 		if(userRegisted[i].sockFD == currentSockFD) 
 			continue;
 		if (userRegisted[i].status == ONLINE) {

@@ -164,7 +164,8 @@ typedef enum {
 typedef struct _BlockUserRespond {
 	RespondType typeRespond;
 	BlockUserResult blockResult;
-	char messenger[196];
+	char userNameBlock[20];
+	char messenger[176];
 }BlockUserRespond;
 
 typedef struct _GetBlockListRespond {
