@@ -743,7 +743,7 @@ void sendGetOnlineUserListRespond() {
 		if (userRegisted[i].status == ONLINE) {
 			strcpy(onlineUserList[numUsersOnline], userRegisted[i].userName);
 			++numUsersOnline;
-			if (numUsersOnline == 10) {
+			if (numUsersOnline == 2) {
 				memcpy(getOnlineUserListRespond.onlineUserList, onlineUserList, 190);
 				getOnlineUserListRespond.numUsersOnline = numUsersOnline;
 				if(i==(numUserRegisted-1)){

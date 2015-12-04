@@ -11,12 +11,13 @@ typedef enum {
 	LOGOUT_RESPOND,
 	REGISTER_RESPOND,
 	NOTIFICATION_RESPOND,
+	USER_CHANGE_STATUS_RESPOND,
 	CHAT_RESPOND,
 	GET_ONLINE_USER_LIST_RESPOND,
 	ROOM_RESPOND,
-	USER_CHANGE_STATUS_RESPOND,
+	GET_ROOM_LIST_RESPOND,
 	BLOCK_RESPOND,
-	GET_ROOM_LIST_RESPOND
+	GET_BLOCK_LIST_RESPOND
 }RespondType;
 
 
@@ -162,11 +163,12 @@ typedef struct _BlockUserRespond {
 	char messenger[196];
 }BlockUserRespond;
 
-typedef struct _GetBlockListRespond  {
+typedef struct _GetBlockListRespond {
 	RespondType typeRespond;
-	int blockListNumber;
+	int numBlockList;
+	GetListRespondResult getBlockRespondResult;
 	char userNameBlock[10][19];
-	char data[6];
-}GetRoomBlockRespond;
+	char data[2];
+}GetBlockListRespond;
 
 #endif

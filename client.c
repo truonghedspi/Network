@@ -102,7 +102,11 @@ int get_pass(char pass[]){
 
 	while(1){
 		pass[i]=getch();
-		if(pass[i]== '\n') break;
+		if(pass[i] == '\n') break;
+		if(pass[i] == 127){
+			i--;
+			continue;
+		}
 		printf("*");
 		i++;
 	}
@@ -150,11 +154,16 @@ int check_currRoom(){
 
 int check_currUserName(char userName[]){
 	int i;
+
 	for( i=0;i<numUsersOnline;i++){
 		if(strcmp(userList[i].userName,userName)==0)
 			return 1;
 	}
 	return 0;
+}
+
+int sendRequest(void *request){
+	return send(currentSockFD,(char* )request,LEN,0);
 }
 
 int show_room_list(){
@@ -167,17 +176,25 @@ int show_room_list(){
 }
 int show_user_list(){
 	int i;
-	fflush(stdout);
+	
 	printf("\nHave %d User Is Online",numUsersOnline);
 	for ( i = 0; i < numUsersOnline; i++){
-		fflush(stdout);
 		printf("\n%d.%s",i+1,userList[i].userName);
 	}
-	fflush(stdout);
+	return 1;
+}
+
+int show_block_list(){
+	int i;
+
+	printf("\nYou Block %d User",numBlockList);
+	for ( i = 0; i < numBlockList; i++){
+		printf("\n%d.%s",i+1,blockList[i].userName);
+	}
 	printf("\n");
 	return 1;
 }
-//phan biet loai chat voi user
+
 void type_chat_respond(char buff[]){
 
 	ChatRespond chatRespond;
@@ -201,7 +218,6 @@ void type_chat_respond(char buff[]){
 	}
 }
 
-//phan biet loai chat voi room
 void type_chat_room_respond(char buff[]){
 	RoomRespond roomRespond;
 
@@ -238,9 +254,7 @@ void type_chat_room_respond(char buff[]){
 			break;
 	}
 }
-int sendRequest(void *request){
-	return send(currentSockFD,(char* )request,LEN,0);
-}
+
 void notification(char buff[]){
 	UserChangeStatusRespond statusRespond;
 
@@ -297,6 +311,9 @@ void check_respond(char mesg[]){
 		case GET_ROOM_LIST_RESPOND:
 			take_room_list(mesg);
 			show_room_list();
+		case GET_BLOCK_LIST_RESPOND:
+			take_block_list(mesg);
+			show_block_list();
 		case USER_CHANGE_STATUS_RESPOND:
 			notification(mesg);
 			break;
@@ -622,12 +639,12 @@ int take_user_list(char mesg[]){
 
 int take_block_list(char mesg[]){
 	int i=0,y=0;
-	GetOnlineUserListRespond userListRespond;
+	GetBlockListRespond blockListRespond;
 	
-	userListRespond=(*(GetOnlineUserListRespond*)mesg);
-	for(i=0;i<userListRespond.numUsersOnline;i++){
-		for (y = 0; y < numUsersOnline; y++) {
-			if (strcmp(userListRespond.onlineUserList[i], userList[y].userName) == 0) {
+	blockListRespond=(*(GetBlockListRespond*)mesg);
+	for(i=0;i<blockListRespond.numBlockList;i++){
+		for (y = 0; y < numBlockList; y++) {
+			if (strcmp(blockListRespond.userNameBlock[i], blockList[y].userName) == 0) {
 				break;
 			}
 		}
@@ -635,14 +652,14 @@ int take_block_list(char mesg[]){
 
 		//khong co thang nao ton tai
 
-		if(y == numUsersOnline) {
-			strcpy(userList[y].userName, userListRespond.onlineUserList[i]);
-			numUsersOnline++;
+		if(y == numBlockList) {
+			strcpy(blockList[y].userName, blockListRespond.userNameBlock[i]);
+			numBlockList++;
 		}
 	}
-	if(numUsersOnline == 0) return 2;
-	if(userListRespond.getListRespondResult == END) return 1;
-	if(userListRespond.getListRespondResult == CONT) return 0;
+	if(numBlockList == 0) return 2;
+	if(blockListRespond.getBlockRespondResult == END) return 1;
+	if(blockListRespond.getBlockRespondResult == CONT) return 0;
 }
 
 
@@ -780,17 +797,17 @@ void reply(){
 	strcpy(currenUserName,tempUserName);
 }
 
-int blockUser(){
-	char username[LEN];
+int block_user(){
+	char userName[LEN];
 	BlockUserRequest request;
 
-	request.typeRequest=BLOCK_USER_REQUEST;
+	request.typeRequest=BLOCK_REQUEST;
 	request.blockType=BLOCK;
 	while(1){
 		show_user_list();
 		printf("\nEnter UserName Want Block: ");
 		fflush(stdout);
-		wait_char(username);
+		wait_char(userName);
 		if(strcmp(userName,"q")==0) return 0;
 		if(check_currUserName(userName)==1){
 			strcpy(request.blockUserName,userName);
@@ -800,6 +817,25 @@ int blockUser(){
 	}
 }
 
+int un_block_user(){
+	char userName[LEN];
+	BlockUserRequest request;
+
+	request.typeRequest=BLOCK_REQUEST;
+	request.blockType=UNBLOCK;
+	while(1){
+		show_block_list();
+		printf("\nEnter UserName Want UnBlock: ");
+		fflush(stdout);
+		wait_char(userName);
+		if(strcmp(userName,"q")==0) return 0;
+		if(check_currUserName(userName)==1){
+			strcpy(request.blockUserName,userName);
+			sendRequest(&request);
+			return 1;
+		}
+	}
+}
 
 int chatting_room(){
 	char buff[LEN];
@@ -868,6 +904,8 @@ void menu(){
 		printf("\n5.CHAT WITH CURREN USER");
 		printf("\n6.COMBACK ROOM");
 		printf("\n7.LOG OUT\n");
+		printf("\n8.BLOCK USER");
+		printf("\n9.UNBLOCK USER");
 		fflush(stdout);
 		fflush(stdin);
 		choose=wait_int();
@@ -916,6 +954,14 @@ void menu(){
 						printf("\nYou choose 7");
 						log_out();
 						return ;
+					case 8 :
+						printf("\nYou choose 8");
+						block_user();
+						break;
+					case 9 :
+						printf("\nYou choose 9");
+						un_block_user();
+						break;
 					default :
 						break;
 				}
