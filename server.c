@@ -422,10 +422,13 @@ void readBlockList(char blockList[100][50], int  * numUserBlock, char * _userNam
 	fclose(f);
 }
 
-void writeBlockList(char blockList[100][50], int numUserBlock, char* fileName) {
+void writeBlockList(char blockList[100][50], int numUserBlock, char* userName) {
 	FILE *f;
 	int i = 0;
+	char fileName[50];
 
+	strcpy(fileName,userName);
+	strcat(fileName,"_block.txt");
 	f = fopen(fileName, "w");
 	if (f == NULL) {
 		printf("Not enought memory\n");
@@ -492,7 +495,7 @@ void handeleBlockUserRequest(BlockUserRequest request) {
 	sendRespond(&respond);
 	strcpy(blockList[numUserBlock], request.blockUserName);
 	++numUserBlock;
-	writeBlockList(blockList, numUserBlock, fileName);
+	writeBlockList(blockList, numUserBlock, userRegisted[userIndex].userName);
 }	
 
  void handleUnblockUserRequest(BlockUserRequest request) {

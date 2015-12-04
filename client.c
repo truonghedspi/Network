@@ -276,6 +276,7 @@ void notification(char buff[]){
 
 void check_respond(char mesg[]){
 	Respond respond;
+	BlockUserRespond blockRespond;
 	int t;
 
 	respond=(*(Respond*)mesg);
@@ -292,6 +293,12 @@ void check_respond(char mesg[]){
 		case ROOM_RESPOND:
 			type_chat_room_respond(mesg);
 			
+			break;
+		case BLOCK_RESPOND:
+				printf("\nBLOCK_RESPOND");
+			break;
+		case NOTIFICATION_RESPOND:
+				printf("\nNOTIFICATION_RESPOND");
 			break;
 		case GET_ONLINE_USER_LIST_RESPOND:
 			t=take_user_list(mesg);
