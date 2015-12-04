@@ -107,7 +107,6 @@ typedef struct _GetRoomListRespond  {
 }GetRoomListRespond;
 
 typedef enum {
-	
 	OUT_FALSE,
 	CHAT_ROOM_SUCCESS,
 	CHAT_ROOM_FALSE,
