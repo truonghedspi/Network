@@ -131,6 +131,7 @@ void main(){
 								room_list_request();
 								block_list_request();
 								while(1){
+									fflush(stdout);
 									wait_char(buff);
 									if(strcmp(buff,"") != 0)
 										break;
@@ -147,6 +148,7 @@ void main(){
 								room_list_request();
 								block_list_request();
 								while(1){
+									fflush(stdout);
 									wait_char(buff);
 									if(strcmp(buff,"") != 0)
 										break;
@@ -958,9 +960,6 @@ void check_respond(char mesg[]){
 			break;
 		case BLOCK_RESPOND:
 			type_block_respond(mesg);
-			break;
-		case NOTIFICATION_RESPOND:
-			printf("\nNOTIFICATION_RESPOND");
 			break;
 		case GET_ONLINE_USER_LIST_RESPOND:
 			t=take_user_list(mesg);

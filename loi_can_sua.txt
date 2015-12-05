@@ -5,3 +5,4 @@
 -A gui tin cho B, nhung khi sang den B thi ten nguoi gui lai la B<xem lai>
 -A,B cung chung 1 Room, B ctrl+C thi A nhan dc 1 OUT_SUCCESS ma k co USER_OUT_ROOM, va ten thang B chua bi xoa khoi Room do(ser van giu thang B trong Room do)
 -A,B dang online. B log out, A nhan dc thong bao B offline(oke), nhung B exit, A van nhan tiep dc thong bao B offline
+-A dang trong Room1, ra ngoai menu(chua out room) xem lai danh sach room thi so thanh vien cua Room1 =0, nhung thang B(chua vao room) van nhin thay Room1 co 1 member,khi B vao Room1, ra menu(chua thoat) thi lai chi thay member cua Room1 =1
