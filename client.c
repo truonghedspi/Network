@@ -306,7 +306,7 @@ int add_partner(char userName[]){
 
 int del_partner(char userName[]){
 	int i=0;
-	printf("\n%d",numUsersOnline);
+	
 	for(i=0;i<numUsersOnline;i++){
 		if(strcmp(userList[i].userName,userName)==0){
 			break;
@@ -991,7 +991,7 @@ void check_respond(char mesg[]){
 int chatting_room(){
 	char buff[LEN];
 
-	printf("\nYou are chat in #%s",currenRoom);
+	printf("\nYou are chat in #%s\n",currenRoom);
 	do{
 		fflush(stdout);
 		wait_char(buff);
@@ -1020,7 +1020,7 @@ int chatting(){
 
 						
 	fflush(stdout);
-	printf("\nYou are chat with @%s",currenUserName);
+	printf("\nYou are chat with @%s\n",currenUserName);
 	do{
 		fflush(stdout);
 		wait_char(buff);
