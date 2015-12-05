@@ -130,7 +130,8 @@ int main() {
 					buff[size]='\0';
 					if (size < 0) {
 						if (errno == ECONNRESET) {
-                      		handleClientDisconnect(currentSockFD);
+                      		if (userRegisted[currentSockFD].status == ONLINE)
+								handleClientDisconnect(currentSockFD);
 							clients[i].fd = -1;
 
                    		} else {
@@ -139,7 +140,8 @@ int main() {
                    		}
                         	 
 					} else if (size == 0) {
-						handleClientDisconnect(currentSockFD);
+						if (userRegisted[currentSockFD].status == ONLINE)
+							handleClientDisconnect(currentSockFD);
 						clients[i].fd = -1;
 					} else {
 						printf("recognizeRequest\n");
@@ -999,7 +1001,6 @@ void handleRoomOut(char * roomName) {
 		return;
 	}
 	removeUserInRoom(&rooms[roomIndex], indexUserInRoom);
-
 
 	respond.roomResult = OUT_SUCCESS;
 	sendRespond(&respond);
