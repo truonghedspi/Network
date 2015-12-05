@@ -40,6 +40,11 @@ typedef struct _Room {
 	int maxUser;
 }Room;
 
+typedef struct _Block{
+	char userList[100][20];
+	int numberBlock;
+}Block;
+
 int sendAll(int sockFD, char* buf, int * len);
 int receive(int sockFD, char* buff, int maxLength, int flags);
 

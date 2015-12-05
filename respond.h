@@ -152,11 +152,13 @@ typedef struct _UserChangeStatusRespond {
 typedef enum {
 	BLOCK_SUCCESS,
 	BLOCK_USER_NOT_EXISTED, //truong hop nhap ten khong dung
+	BLOCK_USER_UNAVAILABLE,//truong hop blocker da bi block hoi blocked
 	BLOCK_USER_BLOCKING,//truong hop nguo do dang bi block r
 	BLOCK_YOU,                //truong gop block chinh no
 	UNBLOCK_SUCCESS,
-	UNBLOCK_USER_NOT_BLOCKED,
+	UNBLOCK_USER_NOT_BLOCKED,//khong the unblock thang chua bi block
 	UNBLOCK_USER_NOT_EXISTED,
+	UNBLOCK_USER_UNAVAILABLE,//khong the ublock thang dang block minh
 	UNBLOCK_YOU
 }BlockUserResult;
 

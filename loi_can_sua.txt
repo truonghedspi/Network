@@ -4,6 +4,8 @@
 +A gui tin cho B, nhung khi sang den B thi ten nguoi gui lai la B<da fix>
 +UPDATE loi ctrl+c: A,B cufng 1 room, B ctrl C thi A nhan dc thong bao day du<da oke>
 +A,B dang online. B log out, A nhan dc thong bao B offline(oke), nhung B exit, A van nhan tiep dc thong bao B offline<da fix>
--A block B, nhung khi A yeu cau hien thi danh sach online van nhin thay B, va B van nhin thay A. A k the chat dc voi B nhung B chat dc voi A
--A dang trong Room1, ra ngoai menu(chua out room) xem lai danh sach room thi so thanh vien cua Room1 =0, nhung thang B(chua vao room) van nhin thay Room1 co 1 member,khi B vao Room1, ra menu(chua thoat) thi lai chi thay member cua Room1 =1(loi o day la: so luong member cua room bi cap nhat sai cho ben client)
+
+
 -loi out room: A,B,C vao room theo thu tu, neu C out room thi B nhan thua 1 thong bao OUT_SUCCESS;
+
+-

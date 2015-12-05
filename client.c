@@ -55,9 +55,12 @@ int check_input2(char buff[]);
 int check_type(Respond respond);
 int check_currRoom(char roomName[]);
 int check_currUserName(char userName[]);
+int check_blockUserName(char userName[]);
 int send_request(void *request);
 int add_partner(char userName[]);
 int del_partner(char userName[]);
+int add_block(char userName[]);
+int del_block(char userName[]);
 int show_room_list();
 int show_user_list();
 int show_block_list();
@@ -280,7 +283,16 @@ int check_currRoom(char roomName[]){
 	}
 	return 0;
 }
+int check_blockUserName(char userName[]){
+	int i;
 
+	for( i=0;i<numBlockList;i++){
+		if(strcmp(blockList[i].userName,userName)==0)
+			return 1;
+	}
+	format_string(userName);
+	return 0;
+}
 int check_currUserName(char userName[]){
 	int i;
 
@@ -324,6 +336,42 @@ int del_partner(char userName[]){
 		return 1;
 	}else if(i==numUsersOnline){
 		printf("\ndel_partner ERROR" );
+		return 0;
+	}
+}
+
+int add_block(char userName[]){
+	int i=0;
+
+	strcpy(blockList[numBlockList].userName,userName);
+	numBlockList++;
+	return 1;
+}
+
+int del_block(char userName[]){
+	int i;
+	
+	i=0;
+	while(1){
+		if(strcmp(blockList[i].userName,userName)==0){
+			break;
+		}
+		i++;
+
+	}
+	if(i<numBlockList){
+		while(1){
+			if(i == numBlockList)
+				break;
+			strcpy(blockList[i].userName,blockList[i+1].userName);
+			i++;
+		}
+		strcpy(blockList[i].userName,"");
+		numBlockList--;
+		return 1;
+	}
+	if(i==numBlockList){
+		printf("\ndel_block ERROR" );
 		return 0;
 	}
 }
@@ -386,6 +434,9 @@ void type_chat_respond(char buff[]){
 		case CHAT_LOG_RESPOND:
 			printf("\n%s",chatRespond.messenger);
 			break;
+		case CHAT_USER_BLOCK:
+			printf("\nCHAT_USER_BLOCK\n");
+			break;
 		default :
 			break;		
 	}
@@ -393,7 +444,9 @@ void type_chat_respond(char buff[]){
 
 void type_room_respond(char buff[]){
 	RoomRespond roomRespond;
+	int i;
 
+	i=0;
 	roomRespond=(*(RoomRespond*)buff);
 	switch(roomRespond.roomResult){
 		case CHAT_ROOM:
@@ -402,13 +455,34 @@ void type_room_respond(char buff[]){
 		case JOIN_SUCCESS:
 			printf("\nJoin #%s success\n",roomRespond.roomName);
 			strcpy(currenRoom,roomRespond.roomName);
+			while(1){
+				if(strcmp(roomRespond.roomName,roomList[i].roomName)==0){
+					roomList[i].numberUser++;
+					break;
+				}
+				i++;
+			}
 			chatting_room();
 			return;
 		case USER_JOIN_ROOM :
 			printf("\n#%s: User %s Join room!\n",roomRespond.roomName,roomRespond.userName);
+			while(1){
+				if(strcmp(roomRespond.roomName,roomList[i].roomName)==0){
+					roomList[i].numberUser++;
+					break;
+				}
+				i++;
+			}
 			return;
 		case USER_OUT_ROOM:
 			printf("\n#%s: User %s Out room!\n",roomRespond.roomName,roomRespond.userName);
+			while(1){
+				if(strcmp(roomRespond.roomName,roomList[i].roomName)==0){
+					roomList[i].numberUser--;
+					break;
+				}
+				i++;
+			}
 			return;
 		case JOIN_FALSE:
 			printf("\nSERV(JOIN_FALSE): %s\n",roomRespond.messenger);
@@ -419,6 +493,13 @@ void type_room_respond(char buff[]){
 			if(strcmp(roomRespond.roomName,currenRoom)==0){
 				format_string(currenRoom);
 			}
+			/*while(1){
+				if(strcmp(roomRespond.roomName,roomList[i].roomName)==0){
+					roomList[i].numberUser--;
+					break;
+				}
+				i++;
+			}*/
 			printf("\nSERV(OUT_SUCCESS): %s\n",roomRespond.messenger);
 			return;
 		case OUT_FALSE:
@@ -441,7 +522,7 @@ void type_block_respond(char buff[]){
 	blockRespond=(*(BlockUserRespond*)buff);
 	switch(blockRespond.blockResult){
 		case BLOCK_SUCCESS:
-			online_user_list_request();
+			add_block(blockRespond.userNameBlock);
 			printf("\nSERV(BLOCK_SUCCESS): %s\n",blockRespond.messenger);
 			break;
 		case BLOCK_USER_NOT_EXISTED:
@@ -452,6 +533,22 @@ void type_block_respond(char buff[]){
 			break;
 		case BLOCK_YOU:
 			printf("\nSERV(BLOCK_YOU): %s\n",blockRespond.messenger);
+			break;
+		case UNBLOCK_SUCCESS:
+			printf("\nUNBLOCK_SUCCESS");
+			del_block(blockRespond.userNameBlock);
+			break;
+		case UNBLOCK_USER_NOT_BLOCKED:
+			printf("\nUNBLOCK_USER_NOT_BLOCKED");
+			break;
+		case UNBLOCK_USER_NOT_EXISTED:
+			printf("\nUNBLOCK_USER_NOT_EXISTED");
+			break;
+		case UNBLOCK_USER_UNAVAILABLE:
+			printf("\nUNBLOCK_USER_UNAVAILABLE");
+			break;
+		case UNBLOCK_YOU:
+			printf("\nUNBLOCK_YOU");
 			break;
 		default :
 			break;
@@ -930,7 +1027,7 @@ int un_block_user(){
 			fflush(stdout);
 			wait_char(userName);
 			if(strcmp(userName,"q")==0) return 0;
-			if(check_currUserName(userName)==1){
+			if(check_blockUserName(userName)==1){
 				strcpy(request.blockUserName,userName);
 				send_request(&request);
 				return 1;
