@@ -41,6 +41,131 @@ typedef struct{
 }Room_List;
 Room_List roomList[10];
 
+int getInt(); 
+void getString(char * str);
+void initTermios(int echo);
+void resetTermios(void);
+char getch_(int echo);
+char getch(void);
+int mygetch();
+int get_pass(char pass[]);
+void format_string(char* string);
+int check_input(char buff[]);
+int check_input2(char buff[]);
+int check_type(Respond respond);
+int check_currRoom(char roomName[]);
+int check_currUserName(char userName[]);
+int send_request(void *request);
+int add_partner(char userName[]);
+int del_partner(char userName[]);
+int show_room_list();
+int show_user_list();
+int show_block_list();
+void type_chat_respond(char buff[]);
+void type_room_respond(char buff[]);
+void type_block_respond(char buff[]);
+void notification(char buff[]);
+int wait_char(char buff[LEN]);
+int wait_int();
+int login();
+int sign_up();
+int log_out();
+int take_room_list(char mesg[]);
+int take_user_list(char mesg[]);
+int take_block_list(char mesg[]);
+void online_user_list_request();
+void room_list_request();
+void block_list_request();
+int out_room();
+int choose_room();
+int choose_user();
+int send_chat_room(char buff[],RoomType type);
+int send_chat(char buff[],ChatType type);
+void reply();
+int block_user();
+int un_block_user();
+void check_respond(char mesg[]);
+int chatting_room();
+int chatting();
+void menu();
+
+void main(){
+	int sockfd;
+	struct sockaddr_in serv_addr;
+	int choose;
+	int t;
+	char buff[LEN];
+
+    serv_addr.sin_family = AF_INET;       
+    serv_addr.sin_port = htons(5500);
+    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
+    size_t size =100;
+
+	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+    	printf("\nSocket ERROR!!");
+    }
+    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    {
+       printf("\nConnect ERROR!!\n");
+       return ;
+    }
+    currentSockFD = sockfd;
+    do{
+    	printf("\n*****MENU*****");
+		printf("\n1.LOG IN" );
+		printf("\n2.SIGN UP");
+		printf("\n3.EXIT");
+		printf("\nChoose: ");
+    	fflush(stdout);
+    	fflush(stdin);
+    	choose=wait_int();
+    	fflush(stdin);
+    	if(choose>0){
+    	    	switch(choose){
+    	    		case 1: 
+    	    				printf("\nLog In");
+    	    				t = login();
+    	    			    if(t == 1) {
+    	    			    	printf("\n(Type \"menu\" to go MENU)");
+								online_user_list_request();
+								room_list_request();
+								block_list_request();
+								while(1){
+									wait_char(buff);
+									if(strcmp(buff,"") != 0)
+										break;
+								}
+    	    			    	menu();
+    	    				}
+    	   					break;
+    	    		case 2: 	
+    	    				printf("\nSign Up");
+    	    				t = sign_up();
+    	    			    if(t == 1) {
+    	    			    	printf("(\nType \"menu\" to go MENU)");
+								online_user_list_request();
+								room_list_request();
+								block_list_request();
+								while(1){
+									wait_char(buff);
+									if(strcmp(buff,"") != 0)
+										break;
+								}
+    	    			    	menu();
+    	    				}
+    	    			    break;
+    	    		case 3:
+    	    			close(currentSockFD);
+    	    			return;
+    	    		default : 
+    	    			printf("\nCHOOSE FALSE! AGAIN\n" );
+    	    			break;
+    	    	}
+    	    }
+    }while(1);
+}
+
+
 int getInt() {
 	int num;
 
@@ -104,6 +229,7 @@ int get_pass(char pass[]){
 		pass[i]=getch();
 		if(pass[i] == '\n') break;
 		if(pass[i] == 127){
+			if(i==0) continue;
 			putchar(8);
 			i--;
 			continue;
@@ -168,313 +294,6 @@ int send_request(void *request){
 	return send(currentSockFD,(char* )request,LEN,0);
 }
 
-int show_room_list(){
-	int i;
-
-	for(i=0;i<10;i++){
-		printf("\n#%s have %d member",roomList[i].roomName,roomList[i].numberUser);
-	}
-	return 1;
-}
-int show_user_list(){
-	int i;
-	
-	if(numUsersOnline == 0) return 0;
-	printf("\nHave %d User Is Online",numUsersOnline);
-	if(numUsersOnline==0) return 0;
-	for ( i = 0; i < numUsersOnline; i++){
-		printf("\n%d.%s",i+1,userList[i].userName);
-	}
-	return 1;
-}
-
-int show_block_list(){
-	int i;
-
-	if(numBlockList==0) return 0;
-	printf("\nYou Block %d User",numBlockList);
-	for ( i = 0; i < numBlockList; i++){
-		printf("\n%d.%s",i+1,blockList[i].userName);
-	}
-	printf("\n");
-	return 1;
-}
-
-void type_chat_respond(char buff[]){
-
-	ChatRespond chatRespond;
-
-	chatRespond=(*(ChatRespond*)buff);
-	switch(chatRespond.chatResult){
-		case CHAT_SUCCESS:
-			//printf("\nDa gui cho client");
-			break;
-		case CHAT_USER_OFFLINE:
-			del_partner(chatRespond.userNameSender);
-			break;
-		case CHAT_FRIEND_RECV:
-			printf("\n@%s: %s\n",chatRespond.userNameSender,chatRespond.messenger);
-			break;
-		case CHAT_LOG_RESPOND:
-			printf("\n%s",chatRespond.messenger);
-			break;
-		default :
-			break;		
-	}
-}
-
-void type_room_respond(char buff[]){
-	RoomRespond roomRespond;
-
-	roomRespond=(*(RoomRespond*)buff);
-	switch(roomRespond.roomResult){
-		case CHAT_ROOM:
-			printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
-			return;
-		case JOIN_SUCCESS:
-			printf("\nJoin #%s success",roomRespond.roomName);
-			strcpy(currenRoom,roomRespond.roomName);
-			chatting_room();
-			return;
-		case USER_JOIN_ROOM :
-			printf("\n#%s: User %s Join room! ",roomRespond.roomName,roomRespond.userName);
-			return;
-		case USER_OUT_ROOM:
-			printf("\n#%s: User %s Out room! ",roomRespond.roomName,roomRespond.userName);
-			return;
-		case JOIN_FALSE:
-			printf("\nSERV(JOIN_FALSE): %s",roomRespond.messenger);
-			strcpy(currenRoom,roomRespond.roomName);
-			chatting_room();
-			return;
-		case OUT_SUCCESS:
-			if(strcmp(roomRespond.roomName,currenRoom)==0){
-				format_string(currenRoom);
-			}
-			printf("\nSERV(OUT_SUCCESS): %s",roomRespond.messenger);
-			//printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
-			return;
-		case OUT_FALSE:
-			
-			return;
-		case CHAT_ROOM_SUCCESS:
-			//printf("\nSERV: %s",roomRespond.messenger);
-			return;
-		case CHAT_ROOM_FALSE:
-			//printf("\nSERV: %s",roomRespond.messenger);
-			return;
-		default :
-			return;
-	}
-}
-
-void online_user_list_request(){
-	GetOnlineUserListRequest	request;
-	char mesg[LEN];
-
-	request.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
-	send_request(&request);
-	return;
-}
-
-void type_block_respond(char buff[]){
-	BlockUserRespond blockRespond;
-
-	blockRespond=(*(BlockUserRespond*)buff);
-	switch(blockRespond.blockResult){
-		case BLOCK_SUCCESS:
-			online_user_list_request();
-			printf("\nSERV(BLOCK_SUCCESS): %s",blockRespond.messenger);
-			break;
-		case BLOCK_USER_NOT_EXISTED:
-			printf("\nSERV(BLOCK_USER_NOT_EXISTED): %s",blockRespond.messenger);
-			break;
-		case BLOCK_USER_BLOCKING:
-			printf("\nSERV(BLOCK_USER_BLOCKING): %s",blockRespond.messenger);
-			break;
-		case BLOCK_YOU:
-			printf("\nSERV(BLOCK_YOU): %s",blockRespond.messenger);
-			break;
-		default :
-			break;
-	}
-}
-void notification(char buff[]){
-	UserChangeStatusRespond statusRespond;
-
-	statusRespond=(*(UserChangeStatusRespond*)buff);
-	if(statusRespond.userStatus==ONLINE){
-		printf("\nSERV: @%s vua online",statusRespond.userName);
-		add_partner(statusRespond.userName);
-		fflush(stdout);
-		printf("\n");
-	}else if(statusRespond.userStatus==OFFLINE){
-		printf("\nSERV: @%s vua offline",statusRespond.userName);
-		del_partner(statusRespond.userName);
-		if(strcmp(statusRespond.userName,currenUserName)==0){
-			format_string(currenUserName);
-		}
-	}
-}
-
-void check_respond(char mesg[]){
-	Respond respond;
-	BlockUserRespond blockRespond;
-	int t;
-
-	respond=(*(Respond*)mesg);
-	switch(respond.typeRespond){
-		case LOGIN_RESPOND:
-			break;
-		case LOGOUT_RESPOND:
-			break;
-		case REGISTER_RESPOND:
-			break;
-		case CHAT_RESPOND:
-			type_chat_respond(mesg);
-			break;
-		case ROOM_RESPOND:
-			type_room_respond(mesg);
-			break;
-		case BLOCK_RESPOND:
-			type_block_respond(mesg);
-			break;
-		case NOTIFICATION_RESPOND:
-			printf("\nNOTIFICATION_RESPOND");
-			break;
-		case GET_ONLINE_USER_LIST_RESPOND:
-			t=take_user_list(mesg);
-			if(t == 1) {
-				show_user_list();
-			}
-			else if(t == 0){
-			 	printf("\nRECEIVING LIST...");
-			}
-			else if(t == 2){
-			 	printf("\nNO OTHER USER IS ONLINE!");
-			}
-			printf("\n");
-			break;
-		case GET_ROOM_LIST_RESPOND:
-			take_room_list(mesg);
-			show_room_list();
-			break;
-		case GET_BLOCK_LIST_RESPOND:
-			take_block_list(mesg);
-			show_block_list();
-			break;
-		case USER_CHANGE_STATUS_RESPOND:
-			notification(mesg);
-			break;
-		default :
-			break;
-
-	}
-}
-int wait_char(char buff[LEN]){
-	int rv;
-	int size_recv;
-	char mesg[LEN];
-	fd_set readSet;
-	struct timeval tv;
-	Respond respond;
-
-	format_string(buff);
-	//fflush(stdout);
-	while(1){
-		tv.tv_sec = 0;
-		tv.tv_usec =0;
-		FD_SET(currentSockFD, &readSet);
-		FD_SET(fileno(stdin), &readSet);
-		
-		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
-		if (FD_ISSET(fileno(stdin), &readSet)){
-			getString(buff);
-			fflush(stdin);
-			if(strcmp(buff,"q")==0) return 2;
-			else return 0;
-		}
-		if(FD_ISSET(currentSockFD, &readSet)){
-			strcpy(mesg,"");
-			size_recv = recv(currentSockFD,mesg,LEN,0);
-			if(size_recv == 0){
-				printf("\nServer Disconnect\n");
-				close(currentSockFD);
-				//return 0;
-				exit(0);
-			}
-			if (size_recv < 0) {
-				printf("Error\n");
-				close(currentSockFD);
-				//return 0;
-				exit(0);
-			}
-			if(size_recv > 0){
-				check_respond(mesg);
-			}
-			format_string(buff);
-			fflush(stdin);
-			return 1;
-			/*if(--rv <= 0){
-                //continue;
-                return 1;
-            }*/
-		}
-	}
-}
-
-int wait_int(){
-	
-	char buff[LEN];
-	int n;
-	int rv;
-	int size_recv;
-	char mesg[LEN];
-	fd_set readSet;
-	struct timeval tv;
-	Respond respond;
-
-	format_string(buff);
-	//fflush(stdout);
-	while(1){
-		tv.tv_sec = 0;
-		tv.tv_usec =0;
-		FD_SET(currentSockFD, &readSet);
-		FD_SET(fileno(stdin), &readSet);
-		fflush(stdin);	
-		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
-		if (FD_ISSET(fileno(stdin), &readSet)){	
-			return getInt();
-		}
-		if(FD_ISSET(currentSockFD, &readSet)){
-			strcpy(mesg,"");
-			size_recv = recv(currentSockFD,mesg,LEN,0);
-			if(size_recv == 0){
-				printf("\nServer disconnect\n");
-				close(currentSockFD);
-				//return 0;
-				exit(0);
-			}
-			if (size_recv < 0) {
-				printf("Error\n");
-				close(currentSockFD);
-				//return 0;
-				exit(0);
-			}
-			if(size_recv > 0){
-				check_respond(mesg);
-			}
-			return -1;
-			/*if(--rv <= 0){
-				//n=-1;
-                //continue;
-                return n=-1;
-            }*/
-		}
-		 
-	}	
-}
-
 int add_partner(char userName[]){
 	int i=0;
 
@@ -507,6 +326,241 @@ int del_partner(char userName[]){
 	}
 }
 
+int show_room_list(){
+	int i;
+
+	for(i=0;i<10;i++){
+		printf("\n#%s have %d member",roomList[i].roomName,roomList[i].numberUser);
+	}
+	printf("\n");
+	return 1;
+}
+
+int show_user_list(){
+	int i;
+	
+	if(numUsersOnline == 0) {
+		printf("\nNO OTHER USER IS ONLINE!\n");
+		return 0;
+	}
+	printf("\nHave %d User Is Online",numUsersOnline);
+	if(numUsersOnline==0) return 0;
+	for ( i = 0; i < numUsersOnline; i++){
+		printf("\n%d.%s",i+1,userList[i].userName);
+	}
+	printf("\n");
+	return 1;
+}
+
+int show_block_list(){
+	int i;
+
+	if(numBlockList==0) {
+		printf("\nBlock List Empty!\n");
+		return 0;
+	}
+	printf("\nYou Block %d User",numBlockList);
+	for ( i = 0; i < numBlockList; i++){
+		printf("\n%d.%s",i+1,blockList[i].userName);
+	}
+	printf("\n");
+	return 1;
+}
+
+void type_chat_respond(char buff[]){
+
+	ChatRespond chatRespond;
+
+	chatRespond=(*(ChatRespond*)buff);
+	switch(chatRespond.chatResult){
+		case CHAT_SUCCESS:
+			break;
+		case CHAT_USER_OFFLINE:
+			del_partner(chatRespond.userNameSender);
+			break;
+		case CHAT_FRIEND_RECV:
+			printf("\n@%s: %s\n",chatRespond.userNameSender,chatRespond.messenger);
+			break;
+		case CHAT_LOG_RESPOND:
+			printf("\n%s",chatRespond.messenger);
+			break;
+		default :
+			break;		
+	}
+}
+
+void type_room_respond(char buff[]){
+	RoomRespond roomRespond;
+
+	roomRespond=(*(RoomRespond*)buff);
+	switch(roomRespond.roomResult){
+		case CHAT_ROOM:
+			printf("\n#%s_@%s: %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
+			return;
+		case JOIN_SUCCESS:
+			printf("\nJoin #%s success\n",roomRespond.roomName);
+			strcpy(currenRoom,roomRespond.roomName);
+			chatting_room();
+			return;
+		case USER_JOIN_ROOM :
+			printf("\n#%s: User %s Join room!\n",roomRespond.roomName,roomRespond.userName);
+			return;
+		case USER_OUT_ROOM:
+			printf("\n#%s: User %s Out room!\n",roomRespond.roomName,roomRespond.userName);
+			return;
+		case JOIN_FALSE:
+			printf("\nSERV(JOIN_FALSE): %s\n",roomRespond.messenger);
+			strcpy(currenRoom,roomRespond.roomName);
+			chatting_room();
+			return;
+		case OUT_SUCCESS:
+			if(strcmp(roomRespond.roomName,currenRoom)==0){
+				format_string(currenRoom);
+			}
+			printf("\nSERV(OUT_SUCCESS): %s\n",roomRespond.messenger);
+			return;
+		case OUT_FALSE:
+			printf("\nSERV(OUT_FALSE)\n");
+			return;
+		case CHAT_ROOM_SUCCESS:
+			printf("\nSERV(CHAT_ROOM_SUCCESS)\n");
+			return;
+		case CHAT_ROOM_FALSE:
+			printf("\nSERV(CHAT_ROOM_FALSE)\n");
+			return;
+		default :
+			return;
+	}
+}
+
+void type_block_respond(char buff[]){
+	BlockUserRespond blockRespond;
+
+	blockRespond=(*(BlockUserRespond*)buff);
+	switch(blockRespond.blockResult){
+		case BLOCK_SUCCESS:
+			online_user_list_request();
+			printf("\nSERV(BLOCK_SUCCESS): %s\n",blockRespond.messenger);
+			break;
+		case BLOCK_USER_NOT_EXISTED:
+			printf("\nSERV(BLOCK_USER_NOT_EXISTED): %s\n",blockRespond.messenger);
+			break;
+		case BLOCK_USER_BLOCKING:
+			printf("\nSERV(BLOCK_USER_BLOCKING): %s\n",blockRespond.messenger);
+			break;
+		case BLOCK_YOU:
+			printf("\nSERV(BLOCK_YOU): %s\n",blockRespond.messenger);
+			break;
+		default :
+			break;
+	}
+}
+
+void notification(char buff[]){
+	UserChangeStatusRespond statusRespond;
+
+	statusRespond=(*(UserChangeStatusRespond*)buff);
+	if(statusRespond.userStatus==ONLINE){
+		printf("\nSERV: @%s vua online\n",statusRespond.userName);
+		add_partner(statusRespond.userName);
+	}else if(statusRespond.userStatus==OFFLINE){
+		printf("\nSERV: @%s vua offline\n",statusRespond.userName);
+		del_partner(statusRespond.userName);
+		if(strcmp(statusRespond.userName,currenUserName)==0){
+			format_string(currenUserName);
+		}
+	}
+}
+
+int wait_char(char buff[LEN]){
+	int rv;
+	int size_recv;
+	char mesg[LEN];
+	fd_set readSet;
+	struct timeval tv;
+	Respond respond;
+
+	format_string(buff);
+	while(1){
+		tv.tv_sec = 0;
+		tv.tv_usec =0;
+		FD_SET(currentSockFD, &readSet);
+		FD_SET(fileno(stdin), &readSet);
+		
+		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
+		if (FD_ISSET(fileno(stdin), &readSet)){
+			getString(buff);
+			fflush(stdin);
+			if(strcmp(buff,"q")==0) return 2;
+			else return 0;
+		}
+		if(FD_ISSET(currentSockFD, &readSet)){
+			strcpy(mesg,"");
+			size_recv = recv(currentSockFD,mesg,LEN,0);
+			if(size_recv == 0){
+				printf("\nServer Disconnect\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if (size_recv < 0) {
+				printf("Error\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if(size_recv > 0){
+				check_respond(mesg);
+			}
+			format_string(buff);
+			fflush(stdin);
+			return 1;
+		}
+	}
+}
+
+int wait_int(){
+	
+	char buff[LEN];
+	int n;
+	int rv;
+	int size_recv;
+	char mesg[LEN];
+	fd_set readSet;
+	struct timeval tv;
+	Respond respond;
+
+	format_string(buff);
+	while(1){
+		tv.tv_sec = 0;
+		tv.tv_usec =0;
+		FD_SET(currentSockFD, &readSet);
+		FD_SET(fileno(stdin), &readSet);
+		fflush(stdin);	
+		select(currentSockFD +1, &readSet, NULL, NULL, &tv);
+		if (FD_ISSET(fileno(stdin), &readSet)){	
+			return getInt();
+		}
+		if(FD_ISSET(currentSockFD, &readSet)){
+			strcpy(mesg,"");
+			size_recv = recv(currentSockFD,mesg,LEN,0);
+			if(size_recv == 0){
+				printf("\nServer disconnect\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if (size_recv < 0) {
+				printf("Error\n");
+				close(currentSockFD);
+				exit(0);
+			}
+			if(size_recv > 0){
+				check_respond(mesg);
+			}
+			return -1;
+		}
+		 
+	}	
+}
+
 int login(){
 	char mesg[LEN];
 	char tk[100];
@@ -535,8 +589,7 @@ int login(){
 	}
 	strcpy(user.password,pass);
 	user.typeRequest=LOGIN_REQUEST;
-	memcpy(mesg,&user,LEN);
-	send(currentSockFD, mesg,LEN, 0);
+	send_request(&user);
 	strcpy(mesg,"");
 	recv(currentSockFD, mesg, LEN, 0);
 	respond=(*(Respond*)mesg);
@@ -598,8 +651,7 @@ int sign_up(){
 	strcpy(user.passwordConfirm,comf_pass);
 	user.typeRequest=REGISTER_REQUEST;
 	loginRequest.typeRequest=LOGIN_REQUEST;
-	memcpy(mesg,&user,LEN);
-	send(currentSockFD, mesg,LEN, 0);
+	send_request(&user);
 	strcpy(mesg,"");
 	recv(currentSockFD, mesg, LEN, 0);
 	respond=(*(Respond*)mesg);
@@ -607,8 +659,7 @@ int sign_up(){
 		registerRespond=(*(RegisterRespond*)mesg);
 		if(registerRespond.registerResult == REGISTER_SUCCESS){
 			printf("\n%s",registerRespond.messenger);
-			memcpy(mesg,&loginRequest,LEN);
-			send(currentSockFD, mesg,LEN, 0);
+			send_request(&loginRequest);
 			strcpy(mesg,"");
 			recv(currentSockFD, mesg, LEN, 0);
 			respond=(*(Respond*)mesg);
@@ -646,8 +697,7 @@ int log_out(){
 	char mesg[LEN];
 
 	request.typeRequest=LOGOUT_REQUEST;
-	memcpy(mesg,&request,LEN);
-	send(currentSockFD,mesg,LEN,0);
+	send_request(&request);
 	return 1;
 }
 
@@ -674,10 +724,6 @@ int take_user_list(char mesg[]){
 				break;
 			}
 		}
-
-
-		//khong co thang nao ton tai
-
 		if(y == numUsersOnline) {
 			strcpy(userList[y].userName, userListRespond.onlineUserList[i]);
 			numUsersOnline++;
@@ -699,10 +745,6 @@ int take_block_list(char mesg[]){
 				break;
 			}
 		}
-
-
-		//khong co thang nao ton tai
-
 		if(y == numBlockList) {
 			strcpy(blockList[y].userName, blockListRespond.userNameBlock[i]);
 			numBlockList++;
@@ -713,9 +755,16 @@ int take_block_list(char mesg[]){
 	if(blockListRespond.getBlockRespondResult == CONT) return 0;
 }
 
+/////gui yeu cau lay danh sach
 
-//gui yeu cau lay danh sach user online
+void online_user_list_request(){
+	GetOnlineUserListRequest	request;
+	char mesg[LEN];
 
+	request.typeRequest=GET_ONLINE_USER_LIST_REQUEST;
+	send_request(&request);
+	return;
+}
 
 void room_list_request(){
 	GetRoomListRequest request;
@@ -743,7 +792,6 @@ int out_room(){
 	roomRequest.roomType=OUT_ROOM;
 	strcpy(roomRequest.roomName,currenRoom);
 	send_request(&roomRequest);
-	//send_chat_room("",OUT_ROOM);
 	format_string(currenRoom);
 }
 
@@ -751,9 +799,6 @@ int choose_room(){
 	char roomName[LEN];
 	RoomRequest roomRequest;
 	
-	//if(check_currRoom()==1){
-	//	out_room();
-	//}
 	roomRequest.typeRequest=ROOM_REQUEST;
 	roomRequest.roomType=JOIN_ROOM;
 	while(1){
@@ -763,17 +808,14 @@ int choose_room(){
 		wait_char(roomName);
 		if(strcmp(roomName,"q")==0) return 0;
 		if(strcmp(roomName,"")!=0 ){
-			//strcpy(currenRoom,roomName);
 			if(check_currRoom(roomName)==1) break;
 		}
 	}
 	strcpy(roomRequest.roomName,roomName);
 	send_request(&roomRequest);
-	//send_chat_room("",JOIN_ROOM);
 	return 1;
 }
 
-//chon user de chat
 int choose_user(){
 	char userName[LEN];
 	int t;
@@ -806,14 +848,14 @@ int send_chat_room(char buff[],RoomType type){
 		roomRequest.roomType=type;
 		strcpy(roomRequest.roomName,currenRoom);
 		strcpy(roomRequest.messenger,buff);
-		memcpy(mesg,&roomRequest,LEN);
-		send(currentSockFD,mesg,LEN,0);
+		send_request(&roomRequest);
 		return 1;
 	}else if(t==0){
 		printf("\nCurrenRoom NULL");
 		return 0;
 	}
 }
+
 int send_chat(char buff[],ChatType type){
 	ChatRequest chatRequest;
 	int t;
@@ -826,8 +868,6 @@ int send_chat(char buff[],ChatType type){
 		strcpy(chatRequest.userNameReceiver,currenUserName);
 		strcpy(chatRequest.messenger,buff);
 		send_request(&chatRequest);
-		/*memcpy(mesg,&chatRequest,LEN);
-		send(currentSockFD,mesg,LEN,0);*/
 		return 1;
 	}else if(t==0){
 		printf("\nCurrenUserName NULL");
@@ -897,6 +937,58 @@ int un_block_user(){
 	}
 }
 
+void check_respond(char mesg[]){
+	Respond respond;
+	BlockUserRespond blockRespond;
+	int t;
+
+	respond=(*(Respond*)mesg);
+	switch(respond.typeRespond){
+		case LOGIN_RESPOND:
+			break;
+		case LOGOUT_RESPOND:
+			break;
+		case REGISTER_RESPOND:
+			break;
+		case CHAT_RESPOND:
+			type_chat_respond(mesg);
+			break;
+		case ROOM_RESPOND:
+			type_room_respond(mesg);
+			break;
+		case BLOCK_RESPOND:
+			type_block_respond(mesg);
+			break;
+		case NOTIFICATION_RESPOND:
+			printf("\nNOTIFICATION_RESPOND");
+			break;
+		case GET_ONLINE_USER_LIST_RESPOND:
+			t=take_user_list(mesg);
+			if(t == 1) {
+			}
+			else if(t == 0){
+			 	printf("\nRECEIVING LIST...");
+			}
+			else if(t == 2){
+			 	printf("\nNO OTHER USER IS ONLINE!");
+			}
+			printf("\n");
+			break;
+		case GET_ROOM_LIST_RESPOND:
+			take_room_list(mesg);
+			break;
+		case GET_BLOCK_LIST_RESPOND:
+			take_block_list(mesg);
+			break;
+		case USER_CHANGE_STATUS_RESPOND:
+			notification(mesg);
+			break;
+		default :
+			break;
+
+	}
+}
+
 int chatting_room(){
 	char buff[LEN];
 
@@ -923,7 +1015,6 @@ int chatting_room(){
 			}
 	}while(1);
 }
-
 
 int chatting(){
 	char buff[LEN];
@@ -953,7 +1044,6 @@ int chatting(){
 void menu(){
 
 	int choose;
-	
 	do{	
 		
 		printf("\n***WAIT USER OR CHOOSE***\n");
@@ -961,11 +1051,12 @@ void menu(){
 		printf("\n2.CHAT WITH");
 		printf("\n3.SHOW ROOM LIST");
 		printf("\n4.CHOOSE ROOM");
-		printf("\n5.CHAT WITH CURREN USER");
-		printf("\n6.COMBACK ROOM");
-		printf("\n7.BLOCK USER");
-		printf("\n8.UNBLOCK USER");
-		printf("\n9.LOG OUT\n");
+		printf("\n5.SHOW BLOCK LIST");
+		printf("\n6.BLOCK USER");
+		printf("\n7.UNBLOCK USER");
+		printf("\n8.COMBACK CHAT FRIEND");
+		printf("\n9.COMBACK ROOM");
+		printf("\n10.LOG OUT\n");
 		fflush(stdout);
 		fflush(stdin);
 		choose=wait_int();
@@ -974,8 +1065,7 @@ void menu(){
 			switch(choose){
 				case 1 :
 					printf("\nYou choose 1");
-					online_user_list_request();
-					
+					show_user_list();
 					break;
 				case 2 :
 					printf("\nYou choose 2");
@@ -986,43 +1076,42 @@ void menu(){
 					break;
 				case 3 :
 					printf("\nYou choose 3");
-					room_list_request();
-					
+					show_room_list();
 					break ;
-				case 4:
+				case 4 :
 					printf("\nYou choose 4");
 					choose_room();
-					/*if(check_currRoom(currenRoom)==1){
-						chatting_room();
-					}else{
-						printf("\nCurrenRoom NULL, please choose room!");
-					}*/
 					break;
-				case 5:
+				case 5 :
 					printf("\nYou choose 5");
+					show_block_list();
+					break;
+				case 6 :
+					printf("\nYou choose 6");
+					block_user();					
+					break;
+				case 7 :
+					printf("\nYou choose 7");
+					un_block_user();
+					break;
+				case 8 :
+					printf("\nYou choose 8");
 					if(check_currUserName(currenUserName)==1){
 						chatting();
 					}
 					break;
-				case 6:
-					printf("\nYou choose 6");
+				case 9 :
+					printf("\nYou choose 9");
 					if(check_currRoom(currenRoom)==1){
 						chatting_room();
 					}
 					break;
-				case 9 :
-					printf("\nYou choose 9");
+				case 10:
+					printf("\nYou choose 10");
 					log_out();
 					return ;
-				case  7 :
-					printf("\nYou choose 7");
-					block_user();
-					break;
-				case 8 :
-					printf("\nYou choose 8");
-					un_block_user();
-					break;
 				default :
+					printf("\nCHOOSE FALSE! AGAIN\n" );
 					break;
 			}
 		}
@@ -1030,59 +1119,4 @@ void menu(){
 
 }
 
-void main(){
-	int sockfd;
-	struct sockaddr_in serv_addr;
-	int choose;
-	int t;
-	char buff[LEN];
 
-    serv_addr.sin_family = AF_INET;       
-    serv_addr.sin_port = htons(5500);
-    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
-    size_t size =100;
-
-	if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-    	printf("\nSocket ERROR!!");
-    }
-    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-       printf("\nConnect ERROR!!\n");
-       return ;
-    }
-    currentSockFD = sockfd;
-    do{
-    	printf("\n*****MENU*****");
-		printf("\n1.LOG IN" );
-		printf("\n2.SIGN UP");
-		printf("\n3.EXIT");
-		printf("\nChoose: ");
-    	fflush(stdout);
-    	fflush(stdin);
-    	choose=wait_int();
-    	fflush(stdin);
-    	if(choose>0){
-    	    	switch(choose){
-    	    		case 1: 
-    	    				printf("\nLog In");
-    	    				t = login();
-    	    			    if(t == 1) {
-    	    			    	menu();
-    	    				}
-    	   					break;
-    	    		case 2: 	
-    	    				printf("\nSign Up");
-    	    				t = sign_up();
-    	    			    if(t == 1) {
-    	    			    	menu();
-    	    				}
-    	    			    break;
-    	    		case 3:
-    	    			close(currentSockFD);
-    	    			return;
-    	    		default : 
-    	    			break;
-    	    	}
-    	    }
-    }while(1);
-}
