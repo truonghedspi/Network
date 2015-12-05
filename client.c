@@ -493,13 +493,13 @@ void type_room_respond(char buff[]){
 			if(strcmp(roomRespond.roomName,currenRoom)==0){
 				format_string(currenRoom);
 			}
-			/*while(1){
+			while(1){
 				if(strcmp(roomRespond.roomName,roomList[i].roomName)==0){
 					roomList[i].numberUser--;
 					break;
 				}
 				i++;
-			}*/
+			}
 			printf("\nSERV(OUT_SUCCESS): %s\n",roomRespond.messenger);
 			return;
 		case OUT_FALSE:

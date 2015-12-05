@@ -1037,7 +1037,6 @@ void sendGetOnlineUserListRespond() {
 	int i = 0;
 	char onlineUserList[10][19];
 	int numUsersOnline = 0;
-	///truong oc cho
 	//char blockList[100][50];
 	//int numUserBlock = 0;
 	int userIndex = -1;
@@ -1262,10 +1261,11 @@ void handleRoomOut(char * roomName) {
 		sendRespond(&respond);
 		return;
 	}
-	removeUserInRoom(&rooms[roomIndex], indexUserInRoom);
+	
 	respond.roomResult = OUT_SUCCESS;
-	sendRoomAll(userRegisted[userIndex].userName, "", rooms[roomIndex], USER_OUT_ROOM);
 	sendRespond(&respond);
+	sendRoomAll(userRegisted[userIndex].userName, "", rooms[roomIndex], USER_OUT_ROOM);
+	removeUserInRoom(&rooms[roomIndex], indexUserInRoom);
 }
 
 void handleRoomRequest(RoomRequest request) {
