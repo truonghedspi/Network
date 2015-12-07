@@ -36,12 +36,6 @@ int find_file_name(char* userNameSend, char* userNameRecv,char fileName[]);
 int write_log(ChatRequest chatRequest);
 int get_max_log(ChatRequest chatRequest);
 int get_log(ChatRequest chatRequest,char *buff,int i);
-///TRUONG OC CHO
-//void readBlockList(char blockList[100][50], int  * numUserBlock, char * _userName);
-//void writeBlockList(char blockList[100][50], int numUserBlock, char* fileName);
-//int findUserIndexInBlockList(char list[100][50], int numUserBlock, char* userName);
-//void handleBlockUserRequest(BlockUserRequest request);
-//void handleUnblockUserRequest(BlockUserRequest request);
 void notifyChangeStatusAll(char* userName, UserStatus status);
 void setOnline(int userIndex);
 void setOffline(int userIndex);
@@ -66,9 +60,8 @@ void handleChatRoomRequest(RoomRequest request);
 void handleRoomOut(char * roomName);
 void handleRoomRequest(RoomRequest request);
 void recognizeRequest(char* buff);
-///NHIN NHE
 Block readBlockList(char * userBlocker);
-void writeBlockList(Block blockList,char * userBlocker);
+int writeBlockList(Block blockList,char * userBlocker);
 int check_block(char userBlocker[],char userBlocked[]);
 void handleBlockUserRequest(BlockUserRequest request);
 void handleUnBlockUserRequest(BlockUserRequest request);
@@ -317,6 +310,7 @@ int find_file_name(char* userNameSend, char* userNameRecv,char fileName[]){
 	}
 	return 0;
 }
+
 int write_log(ChatRequest chatRequest){
 	char userNameSend[15];
 	char userNameRecv[15];
@@ -346,6 +340,7 @@ int write_log(ChatRequest chatRequest){
   		return 1;
   	}else return 0;
 }
+
 int get_max_log(ChatRequest chatRequest){
 	char userNameSend[15];
 	char userNameRecv[15];
@@ -374,6 +369,7 @@ int get_max_log(ChatRequest chatRequest){
   	}
   	return i;
 }
+
 int get_log(ChatRequest chatRequest,char *buff,int i){
   	char userNameSend[15];
 	char userNameRecv[15];
@@ -410,158 +406,7 @@ int get_log(ChatRequest chatRequest,char *buff,int i){
 
 
 //-----------------------------BLOCK-----------------------------------------------
-/*void readBlockList(char blockList[100][50], int  * numUserBlock, char * _userName) {
-	FILE *f;
-	char userName[50];
-	char fileName[50];
 
-	strcpy(fileName,"DataBlock/");
-	strcat(fileName, _userName);
-	strcat(fileName, "_block.txt");
-
-	f = fopen(fileName, "r");
-	if (f == NULL) {
-		printf("File not existed!");
-		return ;
-	}
-
-	while(fscanf(f,"%s",userName) > 0) {
-		strcpy(blockList[*numUserBlock], userName);
-		++*numUserBlock;
-		fgetc(f);
-	}
-
-	fclose(f);
-}
-
-void writeBlockList(char blockList[100][50], int numUserBlock, char* userName) {
-	FILE *f;
-	int i = 0;
-	char fileName[50];
-
-	strcpy(fileName,"DataBlock/");
-	strcat(fileName,userName);
-	strcat(fileName,"_block.txt");
-	f = fopen(fileName, "w");
-	if (f == NULL) {
-		printf("Not enought memory\n");
-		return;
-	}
-
-	for (i = 0; i < numUserBlock; ++i) {
-		fprintf(f, "%s\n", blockList[i]);
-		fputc(' ', f);
-	}
-
-	fclose(f);
-}
-
-int findUserIndexInBlockList(char list[100][50], int numUserBlock, char* userName) {
-	int i = 0;
-
-	for (i = 0; i < numUserBlock; ++i) {
-		if (strcmp(list[i], userName) == 0)
-			return i;
-	}
-
-	return -1;
-}
-
-void handleBlockUserRequest(BlockUserRequest request) {
-	int userIndex = -1;
-	int userBlockIndex = -1;
-	int numUserBlock = 0;
-	char blockList[100][50];
-	BlockUserRespond respond;
-
-	respond.typeRespond = BLOCK_RESPOND;
-	userIndex = findUserIndexWithSockFD(currentSockFD);
-
-	if (strcmp(userRegisted[userIndex].userName, request.blockUserName) == 0) {
-		respond.blockResult = BLOCK_YOU;
-		strcpy(respond.messenger, "You can not block you!");
-		sendRespond(&respond);
-		return;
-	}
-
-	readBlockList(blockList, &numUserBlock,userRegisted[userIndex].userName);
-
-	if (findUserIndexInBlockList(blockList, numUserBlock, request.blockUserName) != -1) {
-		respond.blockResult = BLOCK_USER_BLOCKING;
-		strcpy(respond.messenger, "User who you want block is exites!");
-		sendRespond(&respond);
-		return;
-	}
-
-	userBlockIndex = findUserIndex(request.blockUserName, userRegisted, numUserRegisted);
-
-	if (userBlockIndex == -1) {
-		respond.blockResult = BLOCK_USER_NOT_EXISTED;
-		strcpy(respond.messenger, "User you check is existed!");
-		sendRespond(&respond);
-		return;
-	}
-
-	respond.blockResult = BLOCK_SUCCESS;
-	sendRespond(&respond);
-
-	strcpy(blockList[numUserBlock], request.blockUserName);
-	++numUserBlock;
-	writeBlockList(blockList, numUserBlock, userRegisted[userIndex].userName);
-
-	readBlockList(blockList, &numUserBlock, request.blockUserName);
-	strcpy(blockList[numUserBlock], request.blockUserName);
-	++numUserBlock;
-	writeBlockList(blockList, numUserBlock, request.blockUserName);
-}	
-
-void handleUnblockUserRequest(BlockUserRequest request) {
- 	char blockList[100][50];
- 	int numUserBlock = 0;
- 	int indexInBlockList = -1;
- 	int i = 0;
- 	int userIndex = -1;
- 	BlockUserRespond respond;
-
- 	respond.typeRespond = BLOCK_RESPOND;
- 	userIndex = findUserIndexWithSockFD(currentSockFD);
- 	readBlockList(blockList, &numUserBlock, userRegisted[userIndex].userName);
- 	indexInBlockList = findUserIndexInBlockList(blockList, numUserBlock, request.blockUserName);
-
- 	//thang block chua dang ky
- 	if (findUserIndex(request.blockUserName, userRegisted, numUserRegisted) == -1) {
- 		respond.blockResult = UNBLOCK_USER_NOT_EXISTED;
- 		strcpy(respond.messenger, "User who you want block not existed!");
- 		sendRespond(&respond);
- 		return;
- 	}
-
- 	//thi chua block thang do
- 	if (indexInBlockList == -1) {
- 		respond.blockResult = UNBLOCK_USER_NOT_BLOCKED;
- 		strcpy(respond.messenger, "User who you want block not blocked!");
- 		sendRespond(&respond);
- 		return;
- 	}
- 	//tu minh block minh
- 	if (strcmp(userRegisted[userIndex].userName, request.blockUserName) == 0) {
- 		respond.blockResult = UNBLOCK_YOU;
- 		strcpy(respond.messenger, "You cant not block you!");
- 		sendRespond(&respond);
- 		return;
- 	}
- 	respond.blockResult = UNBLOCK_SUCCESS;
- 	strcpy(respond.messenger, "Unblock success");
- 	sendRespond(&respond);
-
- 	for (i = indexInBlockList; i < numUserBlock - 1; ++i) {
- 		strcpy(blockList[i], blockList[i+1]);
- 	}
- 	--numUserBlock;
- 	writeBlockList(blockList, numUserBlock, userRegisted[userIndex].userName);
-}*/
-///TRUONG OC CHO------------------------------------
-///NHIN NE
 Block readBlockList(char * userBlocker){
 	FILE *f;
 	char userName[50];
@@ -589,7 +434,7 @@ Block readBlockList(char * userBlocker){
 	return blockList;
 }
 
-void writeBlockList(Block blockList,char * userBlocker){
+int writeBlockList(Block blockList,char * userBlocker){
 	FILE *f;
 	int i = 0;
 	char fileName[50];
@@ -601,12 +446,13 @@ void writeBlockList(Block blockList,char * userBlocker){
 	f = fopen(fileName, "w");
 	if (f == NULL) {
 		printf("Not enought memory\n");
-		return;
+		return 0;
 	}
 	for (i = 0; i < blockList.numberBlock; i++) {
 		fprintf(f, "%s\n", blockList.userList[i]);
 	}
 	fclose(f);
+	return 1;
 }
 
 int check_block(char userBlocker[],char userBlocked[]){
@@ -670,22 +516,23 @@ void handleBlockUserRequest(BlockUserRequest request){
 		blockList=readBlockList(userBlocker);
 		strcpy(blockList.userList[blockList.numberBlock],userBlocked);
 		blockList.numberBlock++;
-		writeBlockList(blockList,userBlocker);
-
-		strcpy(respond.userNameBlock,userBlocked);
-		respond.blockResult = BLOCK_SUCCESS;
-		sendRespond(&respond);
-		sendGetBlockListRespond();
-
-		strcpy(statusRespond.userName,userBlocked);
-		sendRespond(&statusRespond);
-
-		socketBlocked=findUserIndex(userBlocked, userRegisted, numUserRegisted);
-		setCurrentSockFD(userRegisted[socketBlocked].sockFD);
-		printf("\ncurrsock %d",currentSockFD);
-		strcpy(statusRespond.userName,userBlocker);
-		sendRespond(&statusRespond);
-		return;
+		if(writeBlockList(blockList,userBlocker)==1){
+		
+			strcpy(respond.userNameBlock,userBlocked);
+			respond.blockResult = BLOCK_SUCCESS;
+			sendRespond(&respond);
+			sendGetBlockListRespond();
+	
+			strcpy(statusRespond.userName,userBlocked);
+			sendRespond(&statusRespond);
+	
+			socketBlocked=findUserIndex(userBlocked, userRegisted, numUserRegisted);
+			setCurrentSockFD(userRegisted[socketBlocked].sockFD);
+			printf("\ncurrsock %d",currentSockFD);
+			strcpy(statusRespond.userName,userBlocker);
+			sendRespond(&statusRespond);
+			return;
+		}
 	}
 }
 
@@ -744,23 +591,24 @@ void handleUnBlockUserRequest(BlockUserRequest request){
 		}
 		strcpy(blockList.userList[i],"");
 		blockList.numberBlock--;
-		writeBlockList(blockList,userBlocker);
-
-		respond.blockResult=UNBLOCK_SUCCESS;
-		strcpy(respond.userNameBlock,userBlocked);
-		sendRespond(&respond);
-		//sendGetBlockListRespond();
-
-		socketBlocked=findUserIndex(userBlocked, userRegisted, numUserRegisted);
-		if(userRegisted[socketBlocked].status==ONLINE){
-			strcpy(statusRespond.userName,userBlocked);
-			sendRespond(&statusRespond);
+		if(writeBlockList(blockList,userBlocker)==1){
 		
-			setCurrentSockFD(userRegisted[socketBlocked].sockFD);
-			strcpy(statusRespond.userName,userBlocker);
-			sendRespond(&statusRespond);
+			respond.blockResult=UNBLOCK_SUCCESS;
+			strcpy(respond.userNameBlock,userBlocked);
+			sendRespond(&respond);
+			//sendGetBlockListRespond();
+	
+			socketBlocked=findUserIndex(userBlocked, userRegisted, numUserRegisted);
+			if(userRegisted[socketBlocked].status==ONLINE){
+				strcpy(statusRespond.userName,userBlocked);
+				sendRespond(&statusRespond);
+			
+				setCurrentSockFD(userRegisted[socketBlocked].sockFD);
+				strcpy(statusRespond.userName,userBlocker);
+				sendRespond(&statusRespond);
+			}
+			return;
 		}
-		return;
 	}
 }
 
@@ -792,10 +640,13 @@ void sendGetBlockListRespond(){
 	blockListRespond.getBlockRespondResult=END;
 	sendRespond(&blockListRespond);
 }
+
 void handleGetBlockListRespond(){
 	sendGetBlockListRespond();
 }
+
 //---------------------NOTIFY CHANGE STATUS------------------------------------------------
+
 void notifyChangeStatusAll(char* userName, UserStatus status) {
 	int i = 0;
 	UserChangeStatusRespond changeStatusRespond;
@@ -805,9 +656,6 @@ void notifyChangeStatusAll(char* userName, UserStatus status) {
 	strcpy(changeStatusRespond.userName,userName);
 	printf("\nchet notify status");
 	for (i = 0; i < numUserRegisted; ++i) {
-		
-		///truong oc cho
-		//if (userRegisted[i].status == ONLINE && strcmp(userRegisted[i].userName, userName) != 0) {
 		if (userRegisted[i].status == ONLINE && strcmp(userRegisted[i].userName, userName) != 0 && check_block(userName,userRegisted[i].userName) == 0) {
 			setCurrentSockFD(userRegisted[i].sockFD);
 			sendRespond(&changeStatusRespond);
@@ -977,22 +825,15 @@ void handleChatWithFriendRequest(ChatRequest chatRequest) {
 	int indexReceiver = -1;
 	ChatRespond chatRespond;
 	User user;
-	//char blockList[100][50];
-	//int numUserBlock = 0;
 
 	printf("Chat handle\n");
 	chatRespond.typeRespond = CHAT_RESPOND;
 	indexSender = findUserIndexWithSockFD(currentSockFD);
-	///truong oc cho
-	//readBlockList(blockList, &numUserBlock, userRegisted[indexSender].userName);
-
-
+	
 	if(chatRequest.chatType==CHAT_FRIEND_SEND){
 		strcpy(chatRespond.userNameSender, userRegisted[indexSender].userName);
 		strcpy(user.userName, chatRequest.userNameReceiver);
 		indexReceiver = findUserIndex(user.userName, userRegisted, numUserRegisted);
-		//truong oc cho
-		//if (findUserIndexInBlockList(blockList, numUserBlock, userRegisted[indexReceiver].userName) != -1) {
 		if(check_block(chatRespond.userNameSender,chatRequest.userNameReceiver) != 0){
 			chatRespond.chatResult = CHAT_USER_BLOCK;
 			sendRespond(&chatRespond);
@@ -1037,20 +878,14 @@ void sendGetOnlineUserListRespond() {
 	int i = 0;
 	char onlineUserList[10][19];
 	int numUsersOnline = 0;
-	//char blockList[100][50];
-	//int numUserBlock = 0;
 	int userIndex = -1;
 
 	getOnlineUserListRespond.numUsersOnline = 0;
 	getOnlineUserListRespond.typeRespond = GET_ONLINE_USER_LIST_RESPOND;
 	userIndex = findUserIndexWithSockFD(currentSockFD);
-	///truong oc cho
-	//readBlockList(blockList, &numUserBlock, userRegisted[userIndex].userName);
 	printf("\nsend get ol user list");
 	for (i = 0; i < numUserRegisted; ++i) {
 		//--neu thang do trong block list thi next
-		///truong oc cho
-		//if (findUserIndexInBlockList(blockList, numUserBlock, userRegisted[i].userName) != -1)
 		if(check_block(userRegisted[userIndex].userName,userRegisted[i].userName) != 0){	
 				printf("\nvao continue1");
 				continue;
@@ -1113,7 +948,6 @@ void initRoom(Room* rooms, int numRooms) {
 		rooms[i].maxUser = 10;
 		rooms[i].numberUser = 0;
 	}
-	
 }
 
 void handleGetRoomListRequest() {
@@ -1164,9 +998,6 @@ void sendRoomAll(char* userName, char * messenger, Room room, RoomResult roomRes
 	strcpy(respond.roomName, room.roomName);
 	for (i = 0; i < room.numberUser; ++i) {
 		userIndex = findUserIndex(room.userList[i], userRegisted, numUserRegisted);
-		///truong oc cho
-		//if (strcmp(userName, room.userList[i]) == 0)
-		///nhin ne
 		if (strcmp(userName, room.userList[i]) == 0 || check_block(userName,room.userList[i]) != 0)
 			continue;
 
@@ -1174,7 +1005,6 @@ void sendRoomAll(char* userName, char * messenger, Room room, RoomResult roomRes
 		sendRespond(&respond);
 	}
 }
-
 
 void handleRoomJoin(RoomRequest request) {
 	int userIndex;
@@ -1195,7 +1025,7 @@ void handleRoomJoin(RoomRequest request) {
 		return ;
 	}
 
-	if (numberUser > 10) {
+	if (numberUser > 3) {
 		respond.roomResult  = JOIN_FALSE;
 		strcpy(respond.roomName, rooms[roomIndex].roomName);
 		strcpy(respond.messenger, "Room is full!");
@@ -1217,6 +1047,7 @@ void handleRoomJoin(RoomRequest request) {
 	respond.roomResult = JOIN_SUCCESS;
 	sendRespond(&respond);
 	sendRoomAll(userRegisted[userIndex].userName, "", rooms[roomIndex], USER_JOIN_ROOM);
+	notifyChangeStatusAll(respond.roomName,ADD);
 }
 
 void handleChatRoomRequest(RoomRequest request) {
@@ -1266,6 +1097,7 @@ void handleRoomOut(char * roomName) {
 	sendRespond(&respond);
 	sendRoomAll(userRegisted[userIndex].userName, "", rooms[roomIndex], USER_OUT_ROOM);
 	removeUserInRoom(&rooms[roomIndex], indexUserInRoom);
+	notifyChangeStatusAll(respond.roomName,SUB);
 }
 
 void handleRoomRequest(RoomRequest request) {
@@ -1283,7 +1115,7 @@ void handleRoomRequest(RoomRequest request) {
 			break;
 	}
 }
-
+//-------------------------------
 
 void recognizeRequest(char* buff) {
 	Request request;

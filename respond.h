@@ -136,7 +136,9 @@ typedef struct RoomRespond {
 
 typedef enum {
 	ONLINE,
-	OFFLINE
+	OFFLINE,
+	ADD,
+	SUB
 }UserStatus;
 
 typedef struct _UserChangeStatusRespond {

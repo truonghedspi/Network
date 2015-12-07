@@ -30,7 +30,7 @@ void handleRoomOut(char * roomName);
 void handleRoomRequest(RoomRequest request);
 void recognizeRequest(char* buff);
 Block readBlockList(char * userBlocker);
-void writeBlockList(Block blockList,char * userBlocker);
+int writeBlockList(Block blockList,char * userBlocker);
 int check_block(char userBlocker[],char userBlocked[]);
 void handleBlockUserRequest(BlockUserRequest request);
 void handleUnBlockUserRequest(BlockUserRequest request);
