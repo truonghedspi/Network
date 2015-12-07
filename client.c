@@ -280,7 +280,7 @@ int check_type(Respond respond){
 int check_currRoom(char roomName[]){
 	int i;
 
-	if(strcmp(roomName,"")==0) return 0;
+	//if(strcmp(roomName,"")==0) return 0;
 	for( i=0;i<10;i++){
 		if(strcmp(roomList[i].roomName,roomName)==0)
 			return 1;
@@ -291,7 +291,8 @@ int check_currRoom(char roomName[]){
 int check_blockUserName(char userName[]){
 	int i;
 
-	if(strcmp(userName,""))return 0;
+	if(numBlockList==0) return 0;
+	//if(strcmp(userName,""))return 0;
 	for( i=0;i<numBlockList;i++){
 		if(strcmp(blockList[i].userName,userName)==0)
 			return 1;
@@ -303,7 +304,8 @@ int check_blockUserName(char userName[]){
 int check_currUserName(char userName[]){
 	int i;
 
-	if(strcmp(userName,"")==0) return 0;
+	if(numUsersOnline==0) return 0;
+	//if(strcmp(userName,"")==0) return 0;
 	for( i=0;i<numUsersOnline;i++){
 		if(strcmp(userList[i].userName,userName)==0)
 			return 1;
@@ -418,8 +420,8 @@ int send_chat(char buff[],ChatType type){
 		send_request(&chatRequest);
 		return 1;
 	}else if(t==0){
-		printf("\e[0;31m");
-		printf("\nYou Not Chat With Anyone\n");
+		printf("\e[1;31m");
+		printf("\nYou No Chat With Someone\n");
 		printf("\e[0m");
 		format_string(currenUserName);
 		return 0;
@@ -440,7 +442,7 @@ int send_chat_room(char buff[],RoomType type){
 		send_request(&roomRequest);
 		return 1;
 	}else if(t==0){
-		printf("\n\e[1;31mYou Not In Room\e[0m");
+		printf("\n\e[1;31mYou Not In Room\n\e[0m");
 		format_string(currenRoom);
 		return 0;
 	}
@@ -605,7 +607,7 @@ void check_respond(char mesg[]){
 			if(t == 1) {
 			}
 			else if(t == 0){
-			 	printf("\n\e[1;31mRECEIVING LIST...\e[0m");
+			 	//printf("\n\e[1;31mRECEIVING LIST...\e[0m");
 			}
 			else if(t == 2){
 			 	printf("\n\e[1;31mNO OTHER USER IS ONLINE!\e[0m");
