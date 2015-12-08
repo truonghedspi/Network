@@ -1019,15 +1019,15 @@ void handleRoomJoin(RoomRequest request) {
 	numberUser = rooms[roomIndex].numberUser;
 	if (roomIndex == -1) {
 		respond.roomResult  = JOIN_FALSE;
-		strcpy(respond.roomName, rooms[roomIndex].roomName);
+		//strcpy(respond.roomName, rooms[roomIndex].roomName);
 		strcpy(respond.messenger, "Room is not existed!");
 		sendRespond(&respond);
 		return ;
 	}
 
-	if (numberUser > 3) {
+	if (numberUser > 2) {
 		respond.roomResult  = JOIN_FALSE;
-		strcpy(respond.roomName, rooms[roomIndex].roomName);
+		//strcpy(respond.roomName, rooms[roomIndex].roomName);
 		strcpy(respond.messenger, "Room is full!");
 		sendRespond(&respond);
 		return;
@@ -1035,7 +1035,7 @@ void handleRoomJoin(RoomRequest request) {
 
 	if (findIndexUserInRoom(rooms[roomIndex], userRegisted[userIndex].userName) != -1) {
 		respond.roomResult  = JOIN_FALSE;
-		strcpy(respond.roomName, rooms[roomIndex].roomName);
+		//strcpy(respond.roomName, rooms[roomIndex].roomName);
 		strcpy(respond.messenger, "you're in this room!");
 		sendRespond(&respond);
 		return;	

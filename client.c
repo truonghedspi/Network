@@ -552,7 +552,7 @@ int show_user_list(){
 		printf("\n\e[1;31mNO OTHER USER ONLINE!\e[0m\n");
 		return 0;
 	}
-	printf("\n\e[0;34mHave %d User Is Online",numUsersOnline);
+	printf("\n\e[0;34mHave %d User Is Online\e[0m",numUsersOnline);
 	if(numUsersOnline==0) return 0;
 	for ( i = 0; i < numUsersOnline; i++){
 		printf("\n%d.\e[1;33m%s\e[0m",i+1,userList[i].userName);
@@ -570,7 +570,7 @@ int show_block_list(){
 	}
 	printf("\n\e[0;34mYou Block %d User\e[0m",numBlockList);
 	for ( i = 0; i < numBlockList; i++){
-		printf("\n%d.%s",i+1,blockList[i].userName);
+		printf("\n%d.\e[1;33m%s\e[0m",i+1,blockList[i].userName);
 	}
 	printf("\n");
 	return 1;
@@ -641,7 +641,7 @@ void type_chat_respond(char buff[]){
 			del_partner(chatRespond.userNameSender);
 			break;
 		case CHAT_FRIEND_RECV:
-			printf("\n\e[1;33m%s:\e[0m %s\n",chatRespond.userNameSender,chatRespond.messenger);
+			printf("\n\e[1;33m%s: \e[0;33m%s\n\e[0m",chatRespond.userNameSender,chatRespond.messenger);
 			break;
 		case CHAT_LOG_RESPOND:
 			printf("\n%s",chatRespond.messenger);
@@ -662,7 +662,7 @@ void type_room_respond(char buff[]){
 	roomRespond=(*(RoomRespond*)buff);
 	switch(roomRespond.roomResult){
 		case CHAT_ROOM:
-			printf("\n\e[1;36m%s:\e[1;33m%s:\e[0m %s",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
+			printf("\n\e[1;36m%s:\e[1;33m%s: \e[0;33m%s\n\e[0m",roomRespond.roomName,roomRespond.userName,roomRespond.messenger);
 			return;
 		case JOIN_SUCCESS:
 			printf("\n\e[0;34mJoin \e[1;36m%s \e[0;34mSuccess\n\e[0m",roomRespond.roomName);
