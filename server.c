@@ -125,7 +125,7 @@ int main() {
 				continue;
 			}
 			if (clients[i].revents & (POLLRDNORM | POLLWRNORM)) {
-					printf("Co hang tu %d\n",clients[i].fd);
+					printf("have signal %d\n",clients[i].fd);
 					setCurrentSockFD(sockFD);
 					size = recv(currentSockFD, buff, SIZE_BLOCK_REQUEST, 0);
 					buff[size]='\0';
@@ -414,7 +414,6 @@ Block readBlockList(char * userBlocker){
 	int i=0;
 	Block blockList;
 
-	printf("\nvao dc read");
 	strcpy(fileName,"DataBlock/");
 	strcat(fileName, userBlocker);
 	strcat(fileName, "_block.txt");
@@ -439,7 +438,6 @@ int writeBlockList(Block blockList,char * userBlocker){
 	int i = 0;
 	char fileName[50];
 
-	printf("\nvao dc write");
 	strcpy(fileName,"DataBlock/");
 	strcat(fileName,userBlocker);
 	strcat(fileName,"_block.txt");
@@ -459,7 +457,6 @@ int check_block(char userBlocker[],char userBlocked[]){
 	
 	int i;
 	Block blockList1,blockList2;
-	printf("\nvao dc check_block");
 	blockList1=readBlockList(userBlocker);
 	if(blockList1.numberBlock > 0){
 		for(i=0;i<blockList1.numberBlock;i++){
@@ -486,7 +483,6 @@ void handleBlockUserRequest(BlockUserRequest request){
 	UserChangeStatusRespond statusRespond;
 	int t;
 
-	printf("\nvao dc handleblock");
 	respond.typeRespond = BLOCK_RESPOND;
 	strcpy(respond.userNameBlock,userBlocked);	
 	statusRespond.typeRespond=USER_CHANGE_STATUS_RESPOND;
@@ -528,7 +524,6 @@ void handleBlockUserRequest(BlockUserRequest request){
 	
 			socketBlocked=findUserIndex(userBlocked, userRegisted, numUserRegisted);
 			setCurrentSockFD(userRegisted[socketBlocked].sockFD);
-			printf("\ncurrsock %d",currentSockFD);
 			strcpy(statusRespond.userName,userBlocker);
 			sendRespond(&statusRespond);
 			return;
@@ -546,7 +541,6 @@ void handleUnBlockUserRequest(BlockUserRequest request){
 	UserChangeStatusRespond statusRespond;
 	int t,i;
 
-	printf("\nvao dc handle unblock");
 	strcpy(respond.userNameBlock,userBlocked);	
 	respond.typeRespond = BLOCK_RESPOND;	
 	statusRespond.typeRespond=USER_CHANGE_STATUS_RESPOND;
@@ -654,7 +648,6 @@ void notifyChangeStatusAll(char* userName, UserStatus status) {
 	changeStatusRespond.typeRespond = USER_CHANGE_STATUS_RESPOND;
 	changeStatusRespond.userStatus = status;
 	strcpy(changeStatusRespond.userName,userName);
-	printf("\nchet notify status");
 	for (i = 0; i < numUserRegisted; ++i) {
 		if (userRegisted[i].status == ONLINE && strcmp(userRegisted[i].userName, userName) != 0 && check_block(userName,userRegisted[i].userName) == 0) {
 			setCurrentSockFD(userRegisted[i].sockFD);
@@ -887,7 +880,6 @@ void sendGetOnlineUserListRespond() {
 	for (i = 0; i < numUserRegisted; ++i) {
 		//--neu thang do trong block list thi next
 		if(check_block(userRegisted[userIndex].userName,userRegisted[i].userName) != 0){	
-				printf("\nvao continue1");
 				continue;
 			}
 		if(userRegisted[i].sockFD == currentSockFD) 
@@ -958,7 +950,6 @@ void handleGetRoomListRequest() {
 	respond.roomNumber = MAX_ROOM;
 	for (i = 0; i < MAX_ROOM; i++) {
 		strcpy(respond.roomList[i], rooms[i].roomName);
-		printf("%s\n",respond.roomList[i] );
 		respond.numberUser[i] = rooms[i].numberUser;
 	}
 	sendRespond(&respond);
@@ -1162,11 +1153,9 @@ void recognizeRequest(char* buff) {
 			break;
 		case BLOCK_REQUEST:
 			blockUserRequest = *((BlockUserRequest* )buff);
-			if (blockUserRequest.blockType == BLOCK){
-				printf("\nBLOCK");			
+			if (blockUserRequest.blockType == BLOCK){		
 				handleBlockUserRequest(blockUserRequest);}
 			if (blockUserRequest.blockType == UNBLOCK){
-				printf("\nUNBLOCK");
 				handleUnBlockUserRequest(blockUserRequest);}
 			break;
 		default:
